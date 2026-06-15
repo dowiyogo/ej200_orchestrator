@@ -1,0 +1,105 @@
+{
+  "fig_id": "fig05a",
+  "figura": "F5",
+  "material": "EJ-204",
+  "dataset": "endonly_mylar_20260614",
+  "optica": "sslg4",
+  "x_mm_list": [
+    0,
+    400,
+    690
+  ],
+  "root_inputs": {
+    "0": "/home/reriosto/SHiP/t0minidaq/endonly_mylar_20260614/photon_hits_x0mm.root",
+    "400": "/home/reriosto/SHiP/t0minidaq/endonly_mylar_20260614/photon_hits_x400mm.root",
+    "690": "/home/reriosto/SHiP/t0minidaq/endonly_mylar_20260614/photon_hits_x690mm.root"
+  },
+  "sha256_inputs": {
+    "0": "63cd8bbee2be58999c55deb10dc6b4fb236fd8c4dcbf9d818ebc2725a99cfdb6",
+    "400": "403016634e3192b6a7d349260eb06b18ed4c222d2114d2128efded7a7e3479ec",
+    "690": "61435a5c9e69350aed0ca07612483bb3c78b879b1b5edd3fe7215e2e67037d55"
+  },
+  "binning": "100 bins over median\u00b18\u00b7MAD; 4-iter Gaussian core fit (TH1::Fit)",
+  "escala": "Y lineal; tabla de 3 puntos",
+  "estimador": "sigma_single = sigma(DeltaT_LR)/sqrt(2); congruente con endonly_sum4.py",
+  "positions": [
+    {
+      "x_mm": 0,
+      "n_events": 2000,
+      "n_hits_total": 308483,
+      "n_triggered": 2000,
+      "trigger_efficiency": 1.0,
+      "mean_delta_lr_ns": -0.00518295738350339,
+      "sigma_lr_ps": 199.5817501085319,
+      "sigma_lr_err_ps": 5.344753797940263,
+      "sigma_lr_rms_ps": 205.59612607803237,
+      "sigma_single_ps": 141.12560890282188,
+      "sigma_single_err_ps": 3.779311654296114,
+      "fit_used": true,
+      "fit_chi2_ndf": 0.8808238604963636,
+      "fit_n_values": 2000
+    },
+    {
+      "x_mm": 400,
+      "n_events": 2000,
+      "n_hits_total": 675507,
+      "n_triggered": 2000,
+      "trigger_efficiency": 1.0,
+      "mean_delta_lr_ns": 3.6371895905904843,
+      "sigma_lr_ps": 291.6809910712992,
+      "sigma_lr_err_ps": 8.165383361884244,
+      "sigma_lr_rms_ps": 372.8845593174064,
+      "sigma_single_ps": 206.2496067297285,
+      "sigma_single_err_ps": 5.773797946176157,
+      "fit_used": true,
+      "fit_chi2_ndf": 2.34211993717513,
+      "fit_n_values": 2000
+    },
+    {
+      "x_mm": 690,
+      "n_events": 2000,
+      "n_hits_total": 5862560,
+      "n_triggered": 1911,
+      "trigger_efficiency": 0.9555,
+      "mean_delta_lr_ns": 6.660395764683002,
+      "sigma_lr_ps": 516.6534174703165,
+      "sigma_lr_err_ps": 14.298521144757437,
+      "sigma_lr_rms_ps": 770.9694030889443,
+      "sigma_single_ps": 365.32913501646505,
+      "sigma_single_err_ps": 10.11058126239722,
+      "fit_used": true,
+      "fit_chi2_ndf": 3.903925406572721,
+      "fit_n_values": 1911
+    }
+  ],
+  "cache_comparison_curvefit_vs_TH1Fit": {
+    "0": {
+      "sigma_single_ps_TH1Fit": 141.12560890282188,
+      "sigma_single_ps_cache_curvefit": 141.5,
+      "delta_ps": -0.374391097178119
+    },
+    "400": {
+      "sigma_single_ps_TH1Fit": 206.2496067297285,
+      "sigma_single_ps_cache_curvefit": 209.3,
+      "delta_ps": -3.0503932702715133
+    },
+    "690": {
+      "sigma_single_ps_TH1Fit": 365.32913501646505,
+      "sigma_single_ps_cache_curvefit": 372.1,
+      "delta_ps": -6.7708649835349775
+    }
+  },
+  "fit_method_note": "TH1::Fit usa pesos Poisson internos (a diferencia de curve_fit sin pesos en endonly_sum4.py). Diferencias esperadas <pocos ps para distribuciones bien gaussianas.",
+  "jitter_per_hit_ps": 20.0,
+  "readout_jitter_quadrature_ps": 20.0,
+  "jitter_note": "Per-hit jitter in time_ns (SiPMSD.cc fJitterSigma=20ps default, scan.mac line commented \u2192 uses default) PLUS readout jitter in quadrature (endonly_sum4.py DEFAULT_READOUT_JITTER_PS=20). Same physical value at two stages. Likely double-counting. Pending Ren\u00e9/Gerardo decision.",
+  "time_convention": "time_ns = (GetGlobalTime() + G4RandGauss(0, 20ps)) / ns. t=0 is primary muon generation (Geant4 global clock). Includes: muon transit (~ps, negligible) + scintillation emission delay + optical propagation to SiPM + per-hit Gaussian jitter (20ps sigma). Verified: t_min per event at x=0 ~ 2.8 ns, consistent with 700mm / 27.7 cm/ns.",
+  "caption_label": "intrinseco (Etapa 1): sin time-walk/ToT/SPTR. sigma_single = sigma(DeltaT_LR)/sqrt(2). Topologia: min() gana-el-primero entre dos clusters SUM4 por extremo (hipotesis).",
+  "caveats": [
+    "Topologia SUM4 = hipotesis gana-el-primero; pendiente confirmacion de Gerardo.",
+    "sigma_single intrinsecos; readout jitter 20ps en cuadratura pendiente revision doble conteo."
+  ],
+  "comando": "python3.12 f5_sidecar.py fig_id=fig05a material=EJ-204",
+  "timestamp": "2026-06-15T21:24:59.715270Z",
+  "exec_tag": "EXEC_14"
+}
