@@ -2,11 +2,19 @@
 """
 F1 sidecar generator — EXEC_14.
 
-Histograma de tiempo relativo al primer fotón del evento.
+Histograma de tiempo relativo al primer fotón del evento (t_rel = t - t_min^ev).
 0–2 ns, bin 2.0 ps (variante 2.5 ps), eje Y log.
-Ajuste de dos gaussianas (componente rápida + lenta) via TH1::Fit.
+
+Modelo físico de emisión de centelleo (QA-1 corrección):
+  I(t) = N * (1-exp(-t/tau_rise)) * (A_fast*exp(-t/tau_fast) + A_slow*exp(-t/tau_slow))
+Ajuste vía TH1::Fit en rango [0.004, 2.0] ns (salta spike de t_min a t=0).
+Test de significancia: ajuste de un solo modo vs doble modo (F-test vía delta-chi2).
 """
 from __future__ import annotations
+
+import os as _os
+_os.environ.setdefault('OPENBLAS_NUM_THREADS', '1')
+_os.environ.setdefault('OMP_NUM_THREADS', '1')
 
 import math
 import pathlib
@@ -30,11 +38,20 @@ from engine import (
 
 BRANCHES_F1 = ['event_id', 'global_id', 'time_ns']
 
+# Physical scintillation model (rise + two decay components)
+# [0]=N, [1]=tau_rise, [2]=A_fast, [3]=tau_fast, [4]=A_slow, [5]=tau_slow
+SCINT_2_FORMULA = "[0]*(1-exp(-x/[1]))*([2]*exp(-x/[3])+[4]*exp(-x/[5]))"
+SCINT_1_FORMULA = "[0]*(1-exp(-x/[1]))*[2]*exp(-x/[3])"
+
+# Fit range: skip first 2 bins (avoid t=0 spike from per-event t_min subtraction)
+FIT_LO = 0.004   # ns (2 × 2ps)
+FIT_HI = 2.0     # ns
+
 
 def compute_t_rel_end(path: pathlib.Path) -> tuple[np.ndarray, int, int, np.ndarray]:
     """
     Load End SiPM hits, compute t_rel = time_ns - min(time_ns per event).
-    Returns: (t_rel_array, n_hits_total, n_events, t_min_per_event)
+    Returns: (t_rel_0_to_2ns, n_hits_total, n_events, t_min_per_event)
     """
     with uproot.open(str(path)) as f:
         tree = f['sipm_hits']
@@ -48,31 +65,26 @@ def compute_t_rel_end(path: pathlib.Path) -> tuple[np.ndarray, int, int, np.ndar
     n_events = int(np.max(event_id)) + 1
     if not (1500 <= n_events <= 3000):
         raise RuntimeError(
-            f"F1: n_events={n_events} outside [1500,3000] for {path}. "
-            f"n_hits_total={n_hits_total} — check hits vs events distinction."
+            f"n_events={n_events} outside [1500,3000] for {path} (n_hits_total={n_hits_total})"
         )
 
-    # Filter to End SiPMs (global_id 0-15)
     end_mask = (global_id >= 0) & (global_id < 16)
     ev_end  = event_id[end_mask]
     t_end   = time_ns[end_mask]
+    del arrays, event_id, global_id, time_ns
 
-    # Per-event minimum time across End SiPMs
     t_min = np.full(n_events, np.inf)
     np.minimum.at(t_min, ev_end, t_end)
     invalid = ~np.isfinite(t_min)
     if invalid.any():
         t_min[invalid] = np.nan
 
-    # Relative time for each End hit
     t_min_hit = t_min[ev_end]
-    valid_hit = np.isfinite(t_min_hit)
-    t_rel = t_end[valid_hit] - t_min_hit[valid_hit]
-
-    # Keep only 0–2 ns range (guard against negative values from jitter)
+    valid = np.isfinite(t_min_hit)
+    t_rel = t_end[valid] - t_min_hit[valid]
     t_rel = t_rel[(t_rel >= 0.0) & (t_rel < 2.0)]
 
-    del arrays, event_id, global_id, time_ns, end_mask, ev_end, t_end, t_min_hit, valid_hit
+    del ev_end, t_end, t_min_hit, valid
     return t_rel, n_hits_total, n_events, t_min
 
 
@@ -81,80 +93,104 @@ def _build_th1(t_rel: np.ndarray, bin_ps: float, name: str, title: str) -> ROOT.
     n_bins = int(round(2.0 / bin_ns))
     h = ROOT.TH1D(name, title, n_bins, 0.0, 2.0)
     h.SetDirectory(ROOT.nullptr)
-    h.GetXaxis().SetTitle("t_{foton} - t^{evento}_{min} [ns]")
+    h.GetXaxis().SetTitle("t_{foton} - t^{ev}_{min} [ns]")
     h.GetYaxis().SetTitle(f"Hits / ({bin_ps:.1f} ps)")
     for t in t_rel:
         h.Fill(float(t))
     return h
 
 
-def _fit_two_gaussians(h: ROOT.TH1D, name: str) -> tuple[ROOT.TF1, dict]:
-    """
-    Fit two Gaussians to time histogram (fast + slow scintillation modes).
-    Seeds the fast component from the peak, slow from a later region.
-    Returns (TF1 object, dict of fit parameters).
-    """
-    # Seed from histogram
-    peak_bin = h.GetMaximumBin()
-    peak_x   = h.GetBinCenter(peak_bin)
-    peak_amp = h.GetBinContent(peak_bin)
-
-    # Estimate slow region: look for secondary structure or use 1.0 ns
-    # Fast component is near the peak; slow is typically at larger t_rel
-    f2g = ROOT.TF1(f"f2g_{name}", "gaus(0)+gaus(3)", 0.0, 2.0)
-    f2g.SetParNames("A_fast", "mu_fast_ns", "sig_fast_ns",
-                    "A_slow", "mu_slow_ns", "sig_slow_ns")
-
-    # Initial seeds
-    f2g.SetParameters(peak_amp, peak_x, 0.05,
-                      peak_amp * 0.2, min(peak_x + 0.5, 1.5), 0.3)
-    # Bounds to keep fast near peak and slow later
-    f2g.SetParLimits(0, 0.0, 1e12)
-    f2g.SetParLimits(1, 0.0, 0.8)        # fast mean 0-0.8 ns
-    f2g.SetParLimits(2, 0.005, 0.5)      # fast sigma 5-500 ps
-    f2g.SetParLimits(3, 0.0, 1e12)
-    f2g.SetParLimits(4, 0.1, 2.0)        # slow mean
-    f2g.SetParLimits(5, 0.05, 1.0)       # slow sigma
-
-    result2g = h.Fit(f2g, "QRNS", "", 0.0, 2.0)
-    status2g = result2g.Status() if result2g else 99
-
-    params2g = {
-        "A_fast":     float(f2g.GetParameter(0)),
-        "mu_fast_ns": float(f2g.GetParameter(1)),
-        "sig_fast_ns":float(f2g.GetParameter(2)),
-        "A_slow":     float(f2g.GetParameter(3)),
-        "mu_slow_ns": float(f2g.GetParameter(4)),
-        "sig_slow_ns":float(f2g.GetParameter(5)),
-        "chi2":       float(f2g.GetChisquare()),
-        "ndf":        int(f2g.GetNDF()),
-        "chi2_ndf":   float(f2g.GetChisquare() / f2g.GetNDF()) if f2g.GetNDF() > 0 else -1.0,
-        "status":     status2g,
+def _read_fit_params_2(f) -> dict:
+    chi2 = float(f.GetChisquare())
+    ndf  = int(f.GetNDF())
+    return {
+        "N":          float(f.GetParameter(0)), "N_err":           float(f.GetParError(0)),
+        "tau_rise_ns": float(f.GetParameter(1)), "tau_rise_err_ns": float(f.GetParError(1)),
+        "A_fast":      float(f.GetParameter(2)), "A_fast_err":      float(f.GetParError(2)),
+        "tau_fast_ns": float(f.GetParameter(3)), "tau_fast_err_ns": float(f.GetParError(3)),
+        "A_slow":      float(f.GetParameter(4)), "A_slow_err":      float(f.GetParError(4)),
+        "tau_slow_ns": float(f.GetParameter(5)), "tau_slow_err_ns": float(f.GetParError(5)),
+        "chi2": chi2, "ndf": ndf, "chi2_ndf": chi2 / ndf if ndf > 0 else -1.0,
     }
-    return f2g, params2g
 
 
-def _fit_one_gaussian(h: ROOT.TH1D, name: str) -> tuple[ROOT.TF1, dict]:
-    """Single Gaussian fit for comparison (stored in sidecar but not the primary fit)."""
-    peak_bin = h.GetMaximumBin()
-    peak_x   = h.GetBinCenter(peak_bin)
-    peak_amp = h.GetBinContent(peak_bin)
-
-    f1g = ROOT.TF1(f"f1g_{name}", "gaus", 0.0, 2.0)
-    f1g.SetParameters(peak_amp, peak_x, 0.3)
-    result1g = h.Fit(f1g, "QRNS+", "", 0.0, 2.0)  # "+" = add to existing
-    status1g = result1g.Status() if result1g else 99
-
-    params1g = {
-        "amplitude":  float(f1g.GetParameter(0)),
-        "mean_ns":    float(f1g.GetParameter(1)),
-        "sigma_ns":   float(f1g.GetParameter(2)),
-        "chi2":       float(f1g.GetChisquare()),
-        "ndf":        int(f1g.GetNDF()),
-        "chi2_ndf":   float(f1g.GetChisquare() / f1g.GetNDF()) if f1g.GetNDF() > 0 else -1.0,
-        "status":     status1g,
+def _read_fit_params_1(f) -> dict:
+    chi2 = float(f.GetChisquare())
+    ndf  = int(f.GetNDF())
+    return {
+        "N":          float(f.GetParameter(0)), "N_err":           float(f.GetParError(0)),
+        "tau_rise_ns": float(f.GetParameter(1)), "tau_rise_err_ns": float(f.GetParError(1)),
+        "A_fast":      float(f.GetParameter(2)), "A_fast_err":      float(f.GetParError(2)),
+        "tau_fast_ns": float(f.GetParameter(3)), "tau_fast_err_ns": float(f.GetParError(3)),
+        "chi2": chi2, "ndf": ndf, "chi2_ndf": chi2 / ndf if ndf > 0 else -1.0,
     }
-    return f1g, params1g
+
+
+def _fit_scint_models(h: ROOT.TH1D, name: str) -> tuple[ROOT.TF1, ROOT.TF1, dict, dict, dict]:
+    """
+    Fit double and single exponential decay models via TH1::Fit (Poisson chi2).
+    Returns (f2, f1, params_2, params_1, significance_test_dict).
+    Caller must use `del` (not .Delete()) on returned TF1 objects.
+    """
+    h_max = float(h.GetMaximum())
+
+    # ── Double-component model ────────────────────────────────────────────────
+    f2 = ROOT.TF1(f"f2scint_{name}", SCINT_2_FORMULA, FIT_LO, FIT_HI)
+    f2.SetParNames("N", "tau_rise", "A_fast", "tau_fast", "A_slow", "tau_slow")
+    f2.SetParameters(h_max, 0.7, 1.0, 1.8, 0.3, 7.0)
+    f2.SetParLimits(0, 0.0, 1e12)
+    f2.SetParLimits(1, 0.2, 1.5)
+    f2.SetParLimits(2, 0.0, 1e10)
+    f2.SetParLimits(3, 1.0, 3.0)
+    f2.SetParLimits(4, 0.0, 1e10)
+    f2.SetParLimits(5, 3.0, 20.0)
+    r2 = h.Fit(f2, "QRNS", "", FIT_LO, FIT_HI)
+    status2 = r2.Status() if r2 else 99
+    params_2 = {**_read_fit_params_2(f2), "status": status2,
+                "model": "N*(1-exp(-t/tau_rise))*(A_fast*exp(-t/tau_fast)+A_slow*exp(-t/tau_slow))"}
+
+    # ── Single-component model ────────────────────────────────────────────────
+    f1 = ROOT.TF1(f"f1scint_{name}", SCINT_1_FORMULA, FIT_LO, FIT_HI)
+    f1.SetParNames("N", "tau_rise", "A_fast", "tau_fast")
+    f1.SetParameters(h_max, 0.7, 1.0, 1.8)
+    f1.SetParLimits(0, 0.0, 1e12)
+    f1.SetParLimits(1, 0.2, 1.5)
+    f1.SetParLimits(2, 0.0, 1e10)
+    f1.SetParLimits(3, 1.0, 3.0)
+    r1 = h.Fit(f1, "QRNS+", "", FIT_LO, FIT_HI)
+    status1 = r1.Status() if r1 else 99
+    params_1 = {**_read_fit_params_1(f1), "status": status1,
+                "model": "N*(1-exp(-t/tau_rise))*A_fast*exp(-t/tau_fast)"}
+
+    # ── Significance of slow component (delta-chi2 test) ─────────────────────
+    chi2_2 = params_2.get("chi2", float("inf"))
+    ndf_2  = params_2.get("ndf", 0)
+    chi2_1 = params_1.get("chi2", float("inf"))
+    ndf_1  = params_1.get("ndf", 0)
+    delta_chi2 = chi2_1 - chi2_2
+    delta_ndf  = ndf_1 - ndf_2
+    A_slow       = params_2.get("A_slow", 0.0)
+    A_slow_err   = params_2.get("A_slow_err", float("inf"))
+    A_slow_signif = A_slow / A_slow_err if A_slow_err > 0 else 0.0
+
+    second_resolved = (
+        status2 == 0
+        and delta_chi2 > max(4.0 * delta_ndf, 10.0)
+        and A_slow_signif > 2.0
+    )
+    significance = {
+        "delta_chi2": delta_chi2,
+        "delta_ndf": delta_ndf,
+        "A_slow_significance_sigma": A_slow_signif,
+        "second_component_resolved": second_resolved,
+        "note": (
+            "Segundo modo resuelto" if second_resolved else
+            "Segunda componente NO resuelta a esta posicion "
+            "(propagacion o escasez de fotones enmascara el modo lento)"
+        ),
+    }
+
+    return f2, f1, params_2, params_1, significance
 
 
 def generate_f1_sidecar(
@@ -169,118 +205,94 @@ def generate_f1_sidecar(
     bin_ps: float = 2.0,
     optica: str = "sslg4",
 ) -> None:
-    """Generate fig01X sidecar: .root + .csv + .meta.json"""
     output_dir = pathlib.Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-
     root_input = pathlib.Path(root_input)
     stem = output_dir / fig_id
 
-    # Clean stale outputs
     for ext in ('.root', '.csv', '.meta.json'):
         p = stem.with_suffix(ext)
-        if p.exists():
-            p.unlink()
+        if p.exists(): p.unlink()
 
-    # Verify input
     verify_root_input(root_input)
-    print(f"[{fig_id}] SHA-256 verify: {root_input.name} ...", end=' ', flush=True)
+    print(f"[{fig_id}] SHA verify: {root_input.name} ...", end=' ', flush=True)
     verify_sha(root_input, sha256_expected, fig_id)
     print("OK")
 
-    # Load data
-    print(f"[{fig_id}] Loading End SiPM hits (x={x_mm}mm) ...", flush=True)
-    t_rel, n_hits_total, n_events, t_min_per_event = compute_t_rel_end(root_input)
-    print(f"[{fig_id}] n_events={n_events}, n_hits_total={n_hits_total}, "
-          f"n_rel_hits (0-2ns)={len(t_rel)}")
+    print(f"[{fig_id}] Loading End hits (x={x_mm}mm) ...", flush=True)
+    t_rel, n_hits, n_events, t_min_ev = compute_t_rel_end(root_input)
+    print(f"[{fig_id}] n_events={n_events}, n_hits={n_hits}, n_trel_0-2ns={len(t_rel)}")
 
-    t_min_median = float(np.nanmedian(t_min_per_event))
-    t_min_p5     = float(np.nanpercentile(t_min_per_event, 5))
-    t_min_p95    = float(np.nanpercentile(t_min_per_event, 95))
+    alt_ps = 2.5 if bin_ps == 2.0 else 2.0
+    h_main = _build_th1(t_rel, bin_ps, f"h_trel_{fig_id}",
+                         f"F1 {material} x={x_mm}mm")
+    h_alt  = _build_th1(t_rel, alt_ps, f"h_trel_{fig_id}_alt",
+                         f"F1 {material} x={x_mm}mm {alt_ps:.1f}ps")
 
-    # Build histograms (primary bin_ps and variant)
-    h_main = _build_th1(t_rel, bin_ps,
-                         f"h_trel_{fig_id}",
-                         f"F1 {material} x={x_mm}mm;t_{{foton}}-t_{{min}}^{{ev}} [ns];Hits/({bin_ps:.1f}ps)")
+    print(f"[{fig_id}] Fitting scintillation models ...", flush=True)
+    f2, f1, params_2, params_1, sig = _fit_scint_models(h_main, fig_id)
 
-    alt_ps  = 2.5 if bin_ps == 2.0 else 2.0
-    h_alt   = _build_th1(t_rel, alt_ps,
-                          f"h_trel_{fig_id}_alt",
-                          f"F1 {material} x={x_mm}mm variant {alt_ps:.1f}ps")
-
-    # Fits on primary histogram
-    f2g, params_2g = _fit_two_gaussians(h_main, fig_id)
-    f1g, params_1g = _fit_one_gaussian(h_main, fig_id)
+    print(f"[{fig_id}] chi2/ndf: 2-mode={params_2['chi2_ndf']:.2f}(st={params_2['status']}) "
+          f"1-mode={params_1['chi2_ndf']:.2f}(st={params_1['status']}) "
+          f"slow_resolved={sig['second_component_resolved']}")
 
     # ── ROOT sidecar ─────────────────────────────────────────────────────────
     root_out = stem.with_suffix('.root')
     tf = ROOT.TFile(str(root_out), "RECREATE")
-    h_main.Write(h_main.GetName())
-    h_alt.Write(h_alt.GetName())
-    f2g.Write(f2g.GetName())
-    f1g.Write(f1g.GetName())
+    h_main.Write(); h_alt.Write(); f2.Write(); f1.Write()
+    ROOT.SetOwnership(f2, False); ROOT.SetOwnership(f1, False)
     tf.Close()
 
-    # ── CSV sidecar ──────────────────────────────────────────────────────────
-    n_bins_main = h_main.GetNbinsX()
-    bin_centers = [h_main.GetBinCenter(i + 1) for i in range(n_bins_main)]
-    bin_counts  = [h_main.GetBinContent(i + 1) for i in range(n_bins_main)]
+    # ── CSV ──────────────────────────────────────────────────────────────────
+    n_bins = h_main.GetNbinsX()
     write_csv_arrays(stem.with_suffix('.csv'), {
-        'bin_center_ns': bin_centers,
-        'count': bin_counts,
+        'bin_center_ns': [h_main.GetBinCenter(i+1) for i in range(n_bins)],
+        'count':         [h_main.GetBinContent(i+1) for i in range(n_bins)],
     })
 
     # ── meta.json ─────────────────────────────────────────────────────────────
+    now = datetime.datetime.now(datetime.UTC).isoformat()
     meta = {
-        "fig_id":     fig_id,
-        "figura":     "F1",
-        "material":   material,
-        "dataset":    dataset,
-        "optica":     optica,
-        "x_mm":       x_mm,
-        "root_input": str(root_input),
-        "sha256_input": sha256_expected,
-        "binning":    f"{bin_ps} ps primary, {alt_ps} ps variant",
-        "escala":     "Y logaritmico; X lineal 0-2 ns",
-        "n_hits_total": int(n_hits_total),
-        "n_events":   int(n_events),
-        "t_min_per_event_median_ns": t_min_median,
-        "t_min_per_event_p5_ns":    t_min_p5,
-        "t_min_per_event_p95_ns":   t_min_p95,
-        "fit_two_gaussians": params_2g,
-        "fit_single_gaussian_comparison": params_1g,
+        "fig_id": fig_id, "figura": "F1", "material": material,
+        "dataset": dataset, "optica": optica, "x_mm": x_mm,
+        "root_input": str(root_input), "sha256_input": sha256_expected,
+        "binning": f"{bin_ps} ps primary, {alt_ps} ps variant; fit range [{FIT_LO},{FIT_HI}] ns",
+        "escala": "Y logaritmico (figura principal); Y lineal (h_trel_alt tambien en .root)",
+        "n_hits_total": int(n_hits), "n_events": int(n_events),
+        "n_trel_hits_0_2ns": int(len(t_rel)),
+        "t_min_per_event_median_ns": float(np.nanmedian(t_min_ev)),
+        "t_min_per_event_p5_ns":     float(np.nanpercentile(t_min_ev, 5)),
+        "t_min_per_event_p95_ns":    float(np.nanpercentile(t_min_ev, 95)),
+        "fit_double_decay": params_2,
+        "fit_single_decay": params_1,
+        "slow_component_significance": sig,
         "time_convention": TIME_CONVENTION,
         "jitter_per_hit_ps": JITTER_PER_HIT_NS * 1000.0,
         "readout_jitter_quadrature_ps": READOUT_JITTER_QUADRATURE_PS,
         "jitter_note": JITTER_DOUBLE_COUNT_RISK,
         "caption_label": (
-            "intrinseco (Etapa 1): sin time-walk/ToT/SPTR. "
-            f"t_foton = GetGlobalTime() + jitter(20ps); "
-            f"t_rel = t_foton - t_min^evento. Bin {bin_ps} ps."
+            f"intrinseco (Etapa 1): sin time-walk/ToT/SPTR. "
+            f"t_rel = t_foton - t_min^evento (incl. jitter 20ps por hit). "
+            f"Bin {bin_ps} ps; escala Y log. "
+            + (f"Dos modos resueltos: tau_fast={params_2.get('tau_fast_ns',0):.2f}ns, "
+               f"tau_slow={params_2.get('tau_slow_ns',0):.2f}ns."
+               if sig['second_component_resolved']
+               else "Segunda componente NO resuelta (propagacion domina en esta posicion).")
         ),
-        "comando": f"python3.12 f1_sidecar.py fig_id={fig_id} x_mm={x_mm}",
-        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
-        "exec_tag": "EXEC_14",
+        "comando": f"python3.12 f1_sidecar.py fig_id={fig_id}",
+        "timestamp": now, "exec_tag": "EXEC_14",
     }
     write_meta(stem.with_suffix('.meta.json'), meta)
+    print(f"[{fig_id}] Done → {root_out.name}")
 
-    print(f"[{fig_id}] Sidecar written: {root_out.name}, {stem.name}.csv, {stem.name}.meta.json")
-
-    # Let Python ref-counting call destructors exactly once (never .Delete() on Python-owned ROOT objects)
-    del h_main, h_alt, f2g, f1g
+    del h_main, h_alt, t_rel, t_min_ev
 
 
 if __name__ == "__main__":
-    # Proof run: fig01a — EJ-204, x=0
     generate_f1_sidecar(
-        fig_id="fig01a",
-        material="EJ-204",
-        dataset="endonly_mylar_20260614",
+        fig_id="fig01a", material="EJ-204", dataset="endonly_mylar_20260614",
         root_input=pathlib.Path(
-            "/home/reriosto/SHiP/t0minidaq/endonly_mylar_20260614/photon_hits_x0mm.root"
-        ),
+            "/home/reriosto/SHiP/t0minidaq/endonly_mylar_20260614/photon_hits_x0mm.root"),
         sha256_expected="63cd8bbee2be58999c55deb10dc6b4fb236fd8c4dcbf9d818ebc2725a99cfdb6",
-        x_mm=0,
-        output_dir=pathlib.Path("/home/reriosto/SHiP/orchestrator/outputs"),
-        bin_ps=2.0,
+        x_mm=0, output_dir=pathlib.Path("/home/reriosto/SHiP/orchestrator/outputs"),
     )

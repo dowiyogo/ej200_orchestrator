@@ -1,0 +1,86 @@
+{
+  "fig_id": "fig02a",
+  "figura": "F2",
+  "material": "EJ-204",
+  "dataset": "endonly_mylar_20260614",
+  "optica": "sslg4",
+  "x_mm_list": "all-31 positions pooled",
+  "sha256_manifest_declared": "8b8c93099eeae7d9e9e3e3a25cd3400890fbcdeee5e041bda5890c5fae77a8b2",
+  "sha256_metric_verified": {
+    "0": "63cd8bbee2be58999c55deb10dc6b4fb236fd8c4dcbf9d818ebc2725a99cfdb6",
+    "400": "403016634e3192b6a7d349260eb06b18ed4c222d2114d2128efded7a7e3479ec",
+    "690": "61435a5c9e69350aed0ca07612483bb3c78b879b1b5edd3fe7215e2e67037d55"
+  },
+  "sha256_note": "SHA verificados para x=0/400/690 (posiciones metricas). Las 28 restantes pasan verify_root_input (estructura + tamanio).",
+  "n_positions": 31,
+  "n_events_total_all_positions": 62000,
+  "npe_thresholds": [
+    5,
+    10,
+    15,
+    20,
+    25
+  ],
+  "binning": "N_pe en End SiPMs (global_id 0-15) por evento; cumulative threshold scan",
+  "escala": "X lineal N_pe threshold [PE]; Y lineal sigma_t [ps]",
+  "estimador": "sigma_single = sigma(DeltaT_LR[N_pe>=T])/sqrt(2); TH1::Fit gaussiano core",
+  "threshold_results": [
+    {
+      "npe_threshold": 5,
+      "n_events_pass": 61510,
+      "sigma_lr_ps": 6963.64390144498,
+      "sigma_lr_err_ps": 80.74417013906387,
+      "sigma_single_ps": 4924.039824480091,
+      "sigma_single_err_ps": 57.09475024661239,
+      "fit_used": true,
+      "fit_chi2_ndf": 88.54004449310808
+    },
+    {
+      "npe_threshold": 10,
+      "n_events_pass": 61510,
+      "sigma_lr_ps": 6963.64390144498,
+      "sigma_lr_err_ps": 80.74417013906387,
+      "sigma_single_ps": 4924.039824480091,
+      "sigma_single_err_ps": 57.09475024661239,
+      "fit_used": true,
+      "fit_chi2_ndf": 88.54004449310808
+    },
+    {
+      "npe_threshold": 15,
+      "n_events_pass": 61510,
+      "sigma_lr_ps": 6963.64390144498,
+      "sigma_lr_err_ps": 80.74417013906387,
+      "sigma_single_ps": 4924.039824480091,
+      "sigma_single_err_ps": 57.09475024661239,
+      "fit_used": true,
+      "fit_chi2_ndf": 88.54004449310808
+    },
+    {
+      "npe_threshold": 20,
+      "n_events_pass": 61510,
+      "sigma_lr_ps": 6963.64390144498,
+      "sigma_lr_err_ps": 80.74417013906387,
+      "sigma_single_ps": 4924.039824480091,
+      "sigma_single_err_ps": 57.09475024661239,
+      "fit_used": true,
+      "fit_chi2_ndf": 88.54004449310808
+    },
+    {
+      "npe_threshold": 25,
+      "n_events_pass": 61510,
+      "sigma_lr_ps": 6963.64390144498,
+      "sigma_lr_err_ps": 80.74417013906387,
+      "sigma_single_ps": 4924.039824480091,
+      "sigma_single_err_ps": 57.09475024661239,
+      "fit_used": true,
+      "fit_chi2_ndf": 88.54004449310808
+    }
+  ],
+  "time_convention": "time_ns = (GetGlobalTime() + G4RandGauss(0, 20ps)) / ns. t=0 is primary muon generation (Geant4 global clock). Includes: muon transit (~ps, negligible) + scintillation emission delay + optical propagation to SiPM + per-hit Gaussian jitter (20ps sigma). Verified: t_min per event at x=0 ~ 2.8 ns, consistent with 700mm / 27.7 cm/ns.",
+  "jitter_per_hit_ps": 20.0,
+  "jitter_note": "Per-hit jitter in time_ns (SiPMSD.cc fJitterSigma=20ps default, scan.mac line commented \u2192 uses default) PLUS readout jitter in quadrature (endonly_sum4.py DEFAULT_READOUT_JITTER_PS=20). Same physical value at two stages. Likely double-counting. Pending Ren\u00e9/Gerardo decision.",
+  "caption_label": "EJ-204 ensemble (31 posiciones). sigma_single sin readout jitter adicional (Etapa 1).",
+  "comando": "python3.12 f2_sidecar.py fig_id=fig02a",
+  "timestamp": "2026-06-15T21:50:33.552511+00:00",
+  "exec_tag": "EXEC_14"
+}

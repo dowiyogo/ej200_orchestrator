@@ -1,0 +1,22 @@
+{
+  "fig_id": "fig03a",
+  "figura": "F3",
+  "material": "EJ-204",
+  "dataset": "endonly_mylar_20260614",
+  "optica": "sslg4",
+  "x_mm_gun": 0,
+  "root_input": "/home/reriosto/SHiP/t0minidaq/endonly_mylar_20260614/photon_hits_x0mm.root",
+  "sha256_input": "63cd8bbee2be58999c55deb10dc6b4fb236fd8c4dcbf9d818ebc2725a99cfdb6",
+  "n_hits_total": 308483,
+  "n_events": 2000,
+  "chosen_event_id": 1845,
+  "n_hits_chosen_event": 603,
+  "n_hits_end": 603,
+  "n_hits_top": 0,
+  "geometry_note": "Top SiPMs: Y=+30.25mm (una sola hilera); End SiPMs: 16 canales (0-15); kBarHalfY=30mm + kTopHalfY=0.25mm; gap centro -12 a +12 mm en X.",
+  "escala": "scatter plot 2D: x vs z (top view) y x vs y (side view)",
+  "caption_label": "EJ-204 evento display reconstruido desde hits (NO re-simulacion). x_gun=0mm. Evento seleccionado: max N_hits=603.",
+  "comando": "python3.12 f3_sidecar.py fig_id=fig03a",
+  "timestamp": "2026-06-15T21:55:20.893919+00:00",
+  "exec_tag": "EXEC_14"
+}

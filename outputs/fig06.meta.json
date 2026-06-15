@@ -1,0 +1,90 @@
+{
+  "fig_id": "fig06",
+  "figura": "F6",
+  "material": "EJ-204",
+  "dataset": "exec07_endtop_2000",
+  "optica": "sslg4",
+  "positions_used": [
+    -50,
+    0,
+    50
+  ],
+  "sha256_manifest_declared": "b67c4f7504c94e546b21f577ca686ee6ca652d46c8ed33b569645347e0cf390b",
+  "top_ids_analyzed": {
+    "47": -72,
+    "49": -32,
+    "50": -12,
+    "51": 12,
+    "52": 32
+  },
+  "pairs": [
+    {
+      "name": "pair_A_49_52",
+      "id1": 49,
+      "id2": 52,
+      "label": "IDs 49/52 (X=-32mm / +32mm, sep 64mm)",
+      "x_id1_mm": -32,
+      "x_id2_mm": 32,
+      "separation_mm": 64,
+      "n_events": 6000,
+      "n_events_both_gt0": 6000,
+      "mean_npe_id1": 271.15366666666665,
+      "mean_npe_id2": 270.4565,
+      "pearson_r_all": -0.36752523421418315,
+      "pearson_r_both_gt0": -0.36752523421418315
+    },
+    {
+      "name": "pair_B_50_51",
+      "id1": 50,
+      "id2": 51,
+      "label": "IDs 50/51 (X=-12mm / +12mm, sep 24mm, adyacentes gap)",
+      "x_id1_mm": -12,
+      "x_id2_mm": 12,
+      "separation_mm": 24,
+      "n_events": 6000,
+      "n_events_both_gt0": 6000,
+      "mean_npe_id1": 290.06266666666664,
+      "mean_npe_id2": 290.13466666666665,
+      "pearson_r_all": 0.8805371517056524,
+      "pearson_r_both_gt0": 0.8805371517056524
+    },
+    {
+      "name": "pair_C_47_49",
+      "id1": 47,
+      "id2": 49,
+      "label": "IDs 47/49 (X=-72mm / -32mm, sep 40mm; control)",
+      "x_id1_mm": -72,
+      "x_id2_mm": -32,
+      "separation_mm": 40,
+      "n_events": 6000,
+      "n_events_both_gt0": 6000,
+      "mean_npe_id1": 197.31366666666668,
+      "mean_npe_id2": 271.15366666666665,
+      "pearson_r_all": 0.8949165928776266,
+      "pearson_r_both_gt0": 0.8949165928776266
+    }
+  ],
+  "n_events_total": 6000,
+  "geometry_verification": {
+    "single_row_Y": true,
+    "Y_sipm_mm": 30.25,
+    "kBarHalfY_mm": 30.0,
+    "kTopHalfY_mm": 0.25,
+    "gap_center_mm": "[-12, +12] mm en X",
+    "local_idx_formula": "X_sipm = -692 + 20 * local_idx [mm]",
+    "id_to_x_mm": {
+      "47": -72,
+      "49": -32,
+      "50": -12,
+      "51": 12,
+      "52": 32
+    }
+  },
+  "escala": "scatter TH2D N_pe(ID_i) vs N_pe(ID_j); Pearson r vs separation",
+  "caption_label": "EJ-204 (EndTop) redundancia Top: correlacion N_pe entre pares. Posiciones x_gun = [-50, 0, 50] mm. IDs 49/52 (simetrico), 50/51 (adyacente gap), 47/49 (control 40mm).",
+  "time_convention": "time_ns = (GetGlobalTime() + G4RandGauss(0, 20ps)) / ns. t=0 is primary muon generation (Geant4 global clock). Includes: muon transit (~ps, negligible) + scintillation emission delay + optical propagation to SiPM + per-hit Gaussian jitter (20ps sigma). Verified: t_min per event at x=0 ~ 2.8 ns, consistent with 700mm / 27.7 cm/ns.",
+  "jitter_per_hit_ps": 20.0,
+  "comando": "python3.12 f6_sidecar.py fig_id=fig06",
+  "timestamp": "2026-06-15T21:53:06.212558+00:00",
+  "exec_tag": "EXEC_14"
+}

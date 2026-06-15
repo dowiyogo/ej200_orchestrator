@@ -79,6 +79,9 @@ def _process_position(root_path: pathlib.Path, x_mm: int, fig_id: str
     for v in delta_lr:
         h.Fill(float(v))
 
+    import math as _math
+    sigma_total_with_quad = _math.sqrt(sigma_single_ps**2 + READOUT_JITTER_QUADRATURE_PS**2)
+
     stats = {
         "x_mm":            x_mm,
         "n_events":        n_events,
@@ -91,6 +94,11 @@ def _process_position(root_path: pathlib.Path, x_mm: int, fig_id: str
         "sigma_lr_rms_ps": rms_lr_ps,
         "sigma_single_ps": sigma_single_ps,
         "sigma_single_err_ps": sigma_single_err,
+        "sigma_total_with_quadrature_ps": sigma_total_with_quad,
+        "sigma_total_note": (
+            "POSIBLE DOBLE CONTEO: jitter 20ps ya incluido en time_ns (SiPMSD.cc). "
+            "sigma_single_ps es el valor reportado en el deck."
+        ),
         "fit_used":        fit.fit_used,
         "fit_chi2_ndf":    fit.chi2_ndf,
         "fit_n_values":    fit.n,
@@ -224,13 +232,22 @@ def generate_f5_sidecar(
         "jitter_note": JITTER_DOUBLE_COUNT_RISK,
         "time_convention": TIME_CONVENTION,
         "caption_label": (
-            "intrinseco (Etapa 1): sin time-walk/ToT/SPTR. "
+            "intrinseco + jitter por-hit 20 ps (Etapa 1): sin time-walk/ToT/SPTR. "
             "sigma_single = sigma(DeltaT_LR)/sqrt(2). "
+            "Readout jitter adicional 20 ps NO aplicado para evitar doble conteo "
+            "(pending confirmacion Gerardo). "
             "Topologia: min() gana-el-primero entre dos clusters SUM4 por extremo (hipotesis)."
+        ),
+        "jitter_decision": (
+            "DECISION QA-1: sigma_single_ps es el valor del deck "
+            "(sin cuadratura de readout jitter). "
+            "sigma_total_with_quadrature_ps = sqrt(sigma_single^2 + 20^2) reportado "
+            "separadamente como referencia, marcado POSIBLE DOBLE CONTEO."
         ),
         "caveats": [
             "Topologia SUM4 = hipotesis gana-el-primero; pendiente confirmacion de Gerardo.",
-            "sigma_single intrinsecos; readout jitter 20ps en cuadratura pendiente revision doble conteo.",
+            "Jitter: per-hit 20ps en SiPMSD.cc YA incluido en time_ns; readout jitter "
+            "adicional NO sumado en cuadratura para deck (doble conteo con fJitterSigma).",
         ],
         "comando": f"python3.12 f5_sidecar.py fig_id={fig_id} material={material}",
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",

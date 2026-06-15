@@ -1,0 +1,302 @@
+{
+  "fig_id": "fig04",
+  "figura": "F4",
+  "material": "EJ-204",
+  "dataset": "exec07_endtop_2000",
+  "optica": "sslg4",
+  "x_mm_list": "all-31 positions",
+  "sha256_manifest_declared": "b67c4f7504c94e546b21f577ca686ee6ca652d46c8ed33b569645347e0cf390b",
+  "n_positions": 31,
+  "T4_threshold": 4,
+  "T20_threshold": 20,
+  "escala": "Y log; X lineal x_gun [mm]",
+  "estimador": "<N_pe_Top | N_pe_Top >= threshold>",
+  "positions": [
+    {
+      "x_mm": -690,
+      "n_events": 2000,
+      "mean_npe_top_all": 2639.7485,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 2639.7485,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 2639.7485
+    },
+    {
+      "x_mm": -670,
+      "n_events": 2000,
+      "mean_npe_top_all": 2946.884,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 2946.884,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 2946.884
+    },
+    {
+      "x_mm": -650,
+      "n_events": 2000,
+      "mean_npe_top_all": 3200.202,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 3200.202,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 3200.202
+    },
+    {
+      "x_mm": -600,
+      "n_events": 2000,
+      "mean_npe_top_all": 3589.4905,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 3589.4905,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 3589.4905
+    },
+    {
+      "x_mm": -550,
+      "n_events": 2000,
+      "mean_npe_top_all": 3884.6115,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 3884.6115,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 3884.6115
+    },
+    {
+      "x_mm": -500,
+      "n_events": 2000,
+      "mean_npe_top_all": 4052.7435,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4052.7435,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4052.7435
+    },
+    {
+      "x_mm": -450,
+      "n_events": 2000,
+      "mean_npe_top_all": 4136.274,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4136.274,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4136.274
+    },
+    {
+      "x_mm": -400,
+      "n_events": 2000,
+      "mean_npe_top_all": 4283.973,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4283.973,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4283.973
+    },
+    {
+      "x_mm": -350,
+      "n_events": 2000,
+      "mean_npe_top_all": 4358.6525,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4358.6525,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4358.6525
+    },
+    {
+      "x_mm": -300,
+      "n_events": 2000,
+      "mean_npe_top_all": 4447.3685,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4447.3685,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4447.3685
+    },
+    {
+      "x_mm": -250,
+      "n_events": 2000,
+      "mean_npe_top_all": 4487.6635,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4487.6635,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4487.6635
+    },
+    {
+      "x_mm": -200,
+      "n_events": 2000,
+      "mean_npe_top_all": 4514.047,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4514.047,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4514.047
+    },
+    {
+      "x_mm": -150,
+      "n_events": 2000,
+      "mean_npe_top_all": 4522.003,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4522.003,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4522.003
+    },
+    {
+      "x_mm": -100,
+      "n_events": 2000,
+      "mean_npe_top_all": 4538.767,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4538.767,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4538.767
+    },
+    {
+      "x_mm": -50,
+      "n_events": 2000,
+      "mean_npe_top_all": 4556.205,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4556.205,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4556.205
+    },
+    {
+      "x_mm": 0,
+      "n_events": 2000,
+      "mean_npe_top_all": 4476.2865,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4476.2865,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4476.2865
+    },
+    {
+      "x_mm": 50,
+      "n_events": 2000,
+      "mean_npe_top_all": 4519.5435,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4519.5435,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4519.5435
+    },
+    {
+      "x_mm": 100,
+      "n_events": 2000,
+      "mean_npe_top_all": 4563.713,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4563.713,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4563.713
+    },
+    {
+      "x_mm": 150,
+      "n_events": 2000,
+      "mean_npe_top_all": 4543.6495,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4543.6495,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4543.6495
+    },
+    {
+      "x_mm": 200,
+      "n_events": 2000,
+      "mean_npe_top_all": 4523.503,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4523.503,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4523.503
+    },
+    {
+      "x_mm": 250,
+      "n_events": 2000,
+      "mean_npe_top_all": 4492.3945,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4492.3945,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4492.3945
+    },
+    {
+      "x_mm": 300,
+      "n_events": 2000,
+      "mean_npe_top_all": 4405.264,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4405.264,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4405.264
+    },
+    {
+      "x_mm": 350,
+      "n_events": 2000,
+      "mean_npe_top_all": 4359.5535,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4359.5535,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4359.5535
+    },
+    {
+      "x_mm": 400,
+      "n_events": 2000,
+      "mean_npe_top_all": 4298.1345,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4298.1345,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4298.1345
+    },
+    {
+      "x_mm": 450,
+      "n_events": 2000,
+      "mean_npe_top_all": 4195.836,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4195.836,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4195.836
+    },
+    {
+      "x_mm": 500,
+      "n_events": 2000,
+      "mean_npe_top_all": 4046.723,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 4046.723,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 4046.723
+    },
+    {
+      "x_mm": 550,
+      "n_events": 2000,
+      "mean_npe_top_all": 3886.0915,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 3886.0915,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 3886.0915
+    },
+    {
+      "x_mm": 600,
+      "n_events": 2000,
+      "mean_npe_top_all": 3620.9805,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 3620.9805,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 3620.9805
+    },
+    {
+      "x_mm": 650,
+      "n_events": 2000,
+      "mean_npe_top_all": 3191.791,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 3191.791,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 3191.791
+    },
+    {
+      "x_mm": 670,
+      "n_events": 2000,
+      "mean_npe_top_all": 2943.9135,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 2943.9135,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 2943.9135
+    },
+    {
+      "x_mm": 690,
+      "n_events": 2000,
+      "mean_npe_top_all": 2657.9545,
+      "frac_T4": 1.0,
+      "mean_npe_top_T4": 2657.9545,
+      "frac_T20": 1.0,
+      "mean_npe_top_T20": 2657.9545
+    }
+  ],
+  "time_convention": "time_ns = (GetGlobalTime() + G4RandGauss(0, 20ps)) / ns. t=0 is primary muon generation (Geant4 global clock). Includes: muon transit (~ps, negligible) + scintillation emission delay + optical propagation to SiPM + per-hit Gaussian jitter (20ps sigma). Verified: t_min per event at x=0 ~ 2.8 ns, consistent with 700mm / 27.7 cm/ns.",
+  "jitter_per_hit_ps": 20.0,
+  "geometry_note": "Top SiPMs: global_id >= 16 (indices 16-85, Y=+30.25mm, una sola hilera)",
+  "caption_label": "EJ-204 (EndTop) perfiles Top: T4 >= 4 PE, T20 >= 20 PE. Escala Y log (misma escala).",
+  "comando": "python3.12 f4_sidecar.py fig_id=fig04",
+  "timestamp": "2026-06-15T21:52:43.518780+00:00",
+  "exec_tag": "EXEC_14"
+}
