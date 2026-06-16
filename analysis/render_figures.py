@@ -50,7 +50,7 @@ plt.rcParams.update({
     'grid.linewidth': 0.5,
 })
 
-TIME_CONV = r'$t_{rel} = t_{fotón} - \min(t_{End})$ por evento'
+TIME_CONV = r'$t_{rel} = t_{photon} - \min(t_{End})$ per event'
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 def load_meta(fig_id: str) -> dict:
@@ -96,7 +96,7 @@ def render_f1(fig_id: str) -> pathlib.Path:
     # Skip the t=0 spike (first bin artifact)
     skip = c_s > 0.001
     ax1.step(c_s[skip], v_s[skip], where='mid', color=col, lw=0.7,
-             label='datos (End SiPMs todos)')
+             label='data (all End SiPMs)')
     # 1-mode fit from meta
     fit1s = meta.get('fit_single_decay_2ns', {})
     N, tr, A, tf = (fit1s.get(k, math.nan)
@@ -106,9 +106,9 @@ def render_f1(fig_id: str) -> pathlib.Path:
         y_fit = scint_1mode(t_fit, N, tr, A, tf)
         chi2  = fit1s.get('chi2_ndf', math.nan)
         ax1.plot(t_fit, y_fit, color=COL_FIT1, lw=1.6, ls='-',
-                 label=f'1-modo: τ_r={tr:.2f} ns, τ_f={tf:.2f} ns\nχ²/ndf={chi2:.2f}')
-    ax1.set(yscale='log', xlim=(0, 2), ylabel='Cuentas / 2 ps',
-            title=f'{mat}  x = {x_mm:+d} mm — ventana 0–2 ns (bin 2 ps, log-Y)')
+                 label=f'1-mode: τ_r={tr:.2f} ns, τ_f={tf:.2f} ns\nχ²/ndf={chi2:.2f}')
+    ax1.set(yscale='log', xlim=(0, 2), ylabel='Counts / 2 ps',
+            title=f'{mat}  x = {x_mm:+d} mm — window 0–2 ns (2 ps bin, log-Y)')
     ax1.set_ylim(bottom=5)
     ax1.legend(loc='upper right', fontsize=7)
     ax1.set_xlabel('')
@@ -116,7 +116,7 @@ def render_f1(fig_id: str) -> pathlib.Path:
     # ── Extended window 0-10 ns ──
     skip_e = c_e >= 0.01   # skip first bin (center 0.005 ns = t=0 spike artifact)
     ax2.step(c_e[skip_e], v_e[skip_e], where='mid', color=col, lw=0.7,
-             label='datos (End SiPMs todos)')
+             label='data (all End SiPMs)')
     # 1-mode fit
     fit1e = meta.get('fit_single_decay_10ns', {})
     N, tr, A, tf = (fit1e.get(k, math.nan)
@@ -126,11 +126,11 @@ def render_f1(fig_id: str) -> pathlib.Path:
         y_fit = scint_1mode(t_fit, N, tr, A, tf)
         chi2  = fit1e.get('chi2_ndf', math.nan)
         ax2.plot(t_fit, y_fit, color=COL_FIT1, lw=1.6,
-                 label=f'1-modo: τ_r={tr:.2f} ns, τ_f={tf:.2f} ns, χ²/ndf={chi2:.2f}')
+                 label=f'1-mode: τ_r={tr:.2f} ns, τ_f={tf:.2f} ns, χ²/ndf={chi2:.2f}')
 
     ax2.set(yscale='log', xlim=(0, 10), xlabel=r'$t_{rel}$ [ns]',
-            ylabel='Cuentas / 10 ps',
-            title=f'{mat}  x = {x_mm:+d} mm — ventana 0–10 ns (bin 10 ps, log-Y)')
+            ylabel='Counts / 10 ps',
+            title=f'{mat}  x = {x_mm:+d} mm — window 0–10 ns (10 ps bin, log-Y)')
     ax2.set_ylim(bottom=5)
     ax2.legend(loc='upper right', fontsize=7)
 
@@ -145,43 +145,80 @@ def render_f1(fig_id: str) -> pathlib.Path:
     # Caption (no wrap=True — causes figure height explosion)
     tof_note = ''
     if meta.get('tof_confirmation_qa1c') and abs(x_mm) >= 680:
-        tof_note = '\nCola 3-10 ns: ~98% fotones cercano dispersados + ~2% ToF lejano (QA-1c onset~4.72ns).'
+        tof_note = '\nTail 3-10 ns: ~98% scattered near-end photons + ~2% far-end ToF (QA-1c onset~4.72ns).'
     cap = (f'{mat}  x={x_mm:+d} mm.  {TIME_CONV}.{tof_note}')
     fig.text(0.5, 0.02, cap, ha='center', va='bottom', fontsize=6.5,
              transform=fig.transFigure)
 
     return _save(fig, fig_id)
 
-# ── F2 — sigma_t ensemble ────────────────────────────────────────────────
+# ── F2 — sigma_t vs N_pe per position ────────────────────────────────────
 def render_f2(fig_id: str) -> pathlib.Path:
-    meta   = load_meta(fig_id)
-    mat    = meta['material']
-    col    = MATCOLS[mat]
-    rows   = load_csv(fig_id)
+    meta = load_meta(fig_id)
+    mat  = meta['material']
+    col  = MATCOLS[mat]
+    rows = load_csv(fig_id)
 
-    npe    = np.array([float(r['npe_threshold'])    for r in rows])
-    sig    = np.array([float(r['sigma_single_ps'])  for r in rows])
+    # New format: per-position sigma_t vs N_pe (QA-3c TRABAJO A)
+    if 'npe_weak' in rows[0]:
+        import math as _math
+        import matplotlib.transforms as _mt
+        npe_weak = np.array([float(r['npe_weak'])       for r in rows])
+        npe_mean = np.array([float(r['npe_mean'])        for r in rows])
+        sigma    = np.array([float(r['sigma_t_ps'])      for r in rows])
+        sig_err  = np.array([float(r['sigma_t_err_ps'])  for r in rows])
+        fit      = meta.get('fit', {})
+        a_ps     = float(fit.get('a_ps', 0))
+        b_ps     = float(fit.get('b_ps', 0))
+        npe_star = fit.get('npe_star')
+        chi2_ndf = float(fit.get('chi2_ndf', -1))
+
+        fig, ax = plt.subplots(figsize=(7.2, 5.5))
+        sort_w = np.argsort(npe_weak)
+        ax.errorbar(npe_weak[sort_w], sigma[sort_w], yerr=sig_err[sort_w],
+                    fmt='o', color=col, ms=5.5, capsize=3, lw=1.2, zorder=5,
+                    label=r'weak end: $\min(N_{pe}^L,\,N_{pe}^R)$')
+        sort_m = np.argsort(npe_mean)
+        ax.errorbar(npe_mean[sort_m], sigma[sort_m], yerr=sig_err[sort_m],
+                    fmt='s', color=col, ms=3.5, capsize=2, lw=0.9, alpha=0.45,
+                    ls='--', zorder=4,
+                    label=r'mean: $(N_{pe}^L + N_{pe}^R)/2$')
+        npe_lo = max(float(npe_weak.min()) * 0.75, 1.0)
+        npe_hi = float(npe_mean.max()) * 1.30
+        npe_fit = np.logspace(_math.log10(npe_lo), _math.log10(npe_hi), 400)
+        sig_fit = np.sqrt(a_ps**2 / npe_fit + b_ps**2)
+        ax.plot(npe_fit, sig_fit, color='#33a02c', lw=2.0, zorder=6,
+                label=(r'fit: $\sqrt{a^2/N_{pe}+b^2}$'
+                       f'\n$a$={a_ps:.1f} ps,  $b$={b_ps:.1f} ps'
+                       f'\n$\\chi^2$/ndf={chi2_ndf:.2f}'))
+        if npe_star is not None and _math.isfinite(npe_star) and npe_lo < npe_star < npe_hi:
+            ax.axvline(npe_star, color='#6a3d9a', ls='--', lw=1.3, alpha=0.85, zorder=3,
+                       label=fr'$N_{{pe}}^*={npe_star:.0f}$ (Poisson = floor)')
+            trans = _mt.blended_transform_factory(ax.transData, ax.transAxes)
+            ax.text(npe_star * 1.04, 0.97, fr'$N_{{pe}}^*$',
+                    transform=trans, fontsize=8, color='#6a3d9a', va='top')
+        ax.set(xscale='log',
+               xlabel=r'$N_{pe}$ per end',
+               ylabel=r'$\sigma_t = \sigma(\Delta T_{LR})/\sqrt{2}$ [ps]',
+               title=(r'F2: timing resolution vs photon yield' '\n'
+                      r'where more light stops helping'
+                      f'  ({mat})'))
+        ax.legend(fontsize=7.5, loc='upper right')
+        ax.grid(True, which='both', alpha=0.25, linewidth=0.5)
+        return _save(fig, fig_id)
+
+    # Legacy format (threshold scan) — kept for reference
+    npe    = np.array([float(r['npe_threshold'])       for r in rows])
+    sig    = np.array([float(r['sigma_single_ps'])     for r in rows])
     sig_e  = np.array([float(r['sigma_single_err_ps']) for r in rows])
-    n_pass = np.array([int(r['n_events_pass'])     for r in rows])
-
     fig, ax = plt.subplots(figsize=(6.5, 5))
     ax.errorbar(npe, sig, yerr=sig_e, fmt='o', color=col, capsize=4,
                 ms=6, lw=1.5, label=mat)
-    ax.set(xlabel='Umbral N_{pe} End (acumulado N_{pe} ≥ T)',
+    ax.set(xlabel=r'$N_{pe}$ End threshold',
            ylabel=r'$\sigma_t = \sigma(\Delta T_{LR})/\sqrt{2}$ [ps]',
-           title=f'F2 — Ensemble σ_t vs umbral N_{{pe}}  ({mat})',
+           title=f'F2 — Ensemble σ_t vs N_{{pe}} threshold  ({mat})',
            xticks=npe)
     ax.legend(fontsize=8)
-
-    # Flag saturation: same value for all thresholds
-    if np.all(np.abs(sig - sig[0]) < 1):
-        ax.text(0.5, 0.65, 'SATURADO: todos los eventos pasan\ntodos los umbrales\n'
-                f'(N_pe_End >> 25; n_pass={n_pass[0]:,})\n'
-                'σ refleja dispersión por posición\n(no resolución intrínseca)',
-                transform=ax.transAxes, ha='center', fontsize=8,
-                color='darkred',
-                bbox=dict(boxstyle='round,pad=0.4', fc='mistyrose', alpha=0.85))
-
     fig.text(0.5, 0.02, meta.get('caption_label', ''), ha='center', fontsize=6.5,
              transform=fig.transFigure)
     return _save(fig, fig_id)
@@ -214,7 +251,7 @@ def render_f3(fig_id: str) -> pathlib.Path:
                         label=lbl)
     ax1.axvline(x_gun, color='k', ls=':', lw=1.0, label=f'x_gun={x_gun:+d} mm')
     ax1.set(xlabel='x_hit [mm]', ylabel='y_hit [mm]',
-            title=f'Vista longitudinal (x vs y)\n{mat} x_gun={x_gun:+d} mm  ev={meta["chosen_event_id"]}')
+            title=f'Longitudinal view (x vs y)\n{mat} x_gun={x_gun:+d} mm  ev={meta["chosen_event_id"]}')
     ax1.legend(fontsize=6.5, markerscale=5)
 
     # Panel 2: cross-section y-z view
@@ -225,7 +262,7 @@ def render_f3(fig_id: str) -> pathlib.Path:
             ax2.scatter(z_mm[mask], y_mm[mask], s=0.5, c=col, alpha=0.5, rasterized=True,
                         label=lbl)
     ax2.set(xlabel='z_hit [mm]', ylabel='y_hit [mm]',
-            title=f'Sección transversal (z vs y)\n{mat} x_gun={x_gun:+d} mm')
+            title=f'Transverse section (z vs y)\n{mat} x_gun={x_gun:+d} mm')
     ax2.legend(fontsize=6.5, markerscale=5)
 
     fig.text(0.5, 0.02,
@@ -251,19 +288,19 @@ def render_f4(fig_id: str) -> pathlib.Path:
     x, tot, near, t4, t20 = (a[sort_idx] for a in (x, tot, near, t4, t20))
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(x, tot,  color='#1f78b4', lw=1.8, label='Total (todos Top SiPMs)', marker='o', ms=2)
+    ax.plot(x, tot,  color='#1f78b4', lw=1.8, label='Total (all Top SiPMs)', marker='o', ms=2)
     ax.plot(x, near, color='#e31a1c', lw=1.8, label='Nearest SiPM', marker='s', ms=2)
     ax.plot(x, t4,   color='#33a02c', lw=1.0, ls='--', alpha=0.6,
-            label=f'T4 (N_pe≥4)  ← idéntico a Total', marker='')
+            label=f'T4 (N_pe≥4)  ← identical to Total', marker='')
     ax.plot(x, t20,  color='#ff7f00', lw=1.0, ls=':', alpha=0.6,
-            label=f'T20 (N_pe≥20) ← idéntico a Total', marker='')
+            label=f'T20 (N_pe≥20) ← identical to Total', marker='')
 
     ax.set(yscale='log', xlabel='$x_{gun}$ [mm]',
            ylabel=r'$\langle N_{pe} \rangle$ Top',
-           title='F4 — Perfiles $N_{pe}$ Top vs posición (EndTop EJ-204, log-Y)')
+           title='F4 — $N_{pe}$ Top profiles vs position (EndTop EJ-204, log-Y)')
     ax.legend(fontsize=7.5)
-    ax.text(0.02, 0.97, f'T4 saturado: {meta.get("T4_saturated_100pct")}\n'
-            f'T20 saturado: {meta.get("T20_saturated_100pct")}\n'
+    ax.text(0.02, 0.97, f'T4 saturated: {meta.get("T4_saturated_100pct")}\n'
+            f'T20 saturated: {meta.get("T20_saturated_100pct")}\n'
             f'{meta.get("t4_t20_note","").split(".")[0]}.',
             transform=ax.transAxes, va='top', fontsize=6.5,
             bbox=dict(boxstyle='round,pad=0.3', fc='lightyellow', alpha=0.9))
@@ -308,7 +345,7 @@ def render_f5(fig_id: str) -> pathlib.Path:
         sig = pos_meta.get('sigma_single_ps', math.nan)
         sig_e = pos_meta.get('sigma_single_err_ps', math.nan)
         eff = pos_meta.get('trigger_efficiency', 1.0)
-        ax.set(xlabel=r'$\Delta T_{LR}$ [ns]', ylabel='Cuentas',
+        ax.set(xlabel=r'$\Delta T_{LR}$ [ns]', ylabel='Counts',
                title=f'{mat}  x={xv:+d} mm')
         ax.text(0.05, 0.97,
                 f'σ_single={sig:.0f}±{sig_e:.0f} ps\neff={eff:.1%}',
@@ -325,8 +362,8 @@ def render_f5(fig_id: str) -> pathlib.Path:
     for j, (yv, ey) in enumerate(zip(ys, eys)):
         ax_s.text(j, yv + ey + 5, f'{yv:.0f}', ha='center', fontsize=7.5, fontweight='bold')
 
-    fig.suptitle(f'F5 — Resolución temporal SUM4 L/R  ({mat})\n'
-                 f'σ_t = σ(ΔT_LR)/√2 (intrínseco + jitter 20ps/hit, sin readout jitter adicional)',
+    fig.suptitle(f'F5 — SUM4 L/R timing resolution  ({mat})\n'
+                 f'σ_t = σ(ΔT_LR)/√2 (intrinsic + 20 ps/hit jitter, no additional readout jitter)',
                  fontsize=9, y=1.02)
     return _save(fig, fig_id)
 
@@ -369,7 +406,7 @@ def render_f6(fig_id: str) -> pathlib.Path:
                 im = ax.pcolormesh(xc, yc, vals.T,
                                    norm=matplotlib.colors.LogNorm(vmin=vmin, vmax=vmax),
                                    cmap='Blues', rasterized=True)
-                plt.colorbar(im, ax=ax, label='Cuentas')
+                plt.colorbar(im, ax=ax, label='Counts')
 
         r_color = '#d73027' if r < 0 else '#1a9641'
         r_text  = f'r = {r:+.3f}'
@@ -377,11 +414,11 @@ def render_f6(fig_id: str) -> pathlib.Path:
                 fontweight='bold', color=r_color,
                 bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.9))
         ax.set(xlabel=f'$N_{{pe}}$ ID {id1}', ylabel=f'$N_{{pe}}$ ID {id2}',
-               title=f'Par {chr(65+pairs.index(p))}: {lbl}\n(sep={sep} mm)')
+               title=f'Pair {chr(65+pairs.index(p))}: {lbl}\n(sep={sep} mm)')
 
-    fig.suptitle('F6 — Redundancia Top SiPMs: correlación N_pe entre pares vecinos\n'
-                 'Par A (49/52, simétrico): r=−0.37 complementario  |  '
-                 'Par B (50/51): r=+0.88  |  Par C (47/49, mismo lado): r=+0.89 redundante',
+    fig.suptitle('F6 — Top SiPM redundancy: N_pe correlation between neighbouring pairs\n'
+                 'Pair A (49/52, symmetric): r=−0.37 complementary  |  '
+                 'Pair B (50/51): r=+0.88  |  Pair C (47/49, same side): r=+0.89 redundant',
                  fontsize=9, y=1.01)
     fig.tight_layout()
     return _save(fig, fig_id)
@@ -416,9 +453,9 @@ def render_tof_probe(fig_id: str = 'fig01_tof_probe') -> pathlib.Path:
         col  = MATCOLS.get(mat, '#636363')
 
         for side, ls, col_s, lbl in [
-            ('both',  '-',  COL_BOTH,  'AMBOS'),
-            ('right', '--', COL_RIGHT, 'END_RIGHT (cercano)'),
-            ('left',  ':',  COL_LEFT,  'END_LEFT (lejano)'),
+            ('both',  '-',  COL_BOTH,  'BOTH'),
+            ('right', '--', COL_RIGHT, 'END_RIGHT (near)'),
+            ('left',  ':',  COL_LEFT,  'END_LEFT (far)'),
         ]:
             hkey = f'h_{side}_{label}'
             if hkey in hists:
@@ -438,20 +475,20 @@ def render_tof_probe(fig_id: str = 'fig01_tof_probe') -> pathlib.Path:
                 ax.axvline(tof + res.get('t_onset_near_ns', 0.015),
                            color=COL_LEFT, ls='--', lw=0.9, alpha=0.7)
                 ax.text(0.55, 0.85,
-                        f'Onset lejano: {tof:.2f} ns\n'
-                        f'Pred ToF: {pred:.2f} ns\n'
+                        f'Far-end onset: {tof:.2f} ns\n'
+                        f'ToF pred: {pred:.2f} ns\n'
                         f'{verd}',
                         transform=ax.transAxes, fontsize=7, color='#222',
                         bbox=dict(boxstyle='round', fc='white', alpha=0.85))
 
         ax.set(yscale='log', xlim=(0, 10), xlabel=r'$t_{rel}$ [ns]',
-               ylabel='Cuentas / 10 ps' if ax is axes[0] else '',
+               ylabel='Counts / 10 ps' if ax is axes[0] else '',
                title=f'{mat}  x={x_mm:+d} mm')
         ax.set_ylim(bottom=1)
         ax.legend(fontsize=6.5)
 
-    fig.suptitle('QA-1c — t_rel por extremo  |  Gris=AMBOS  Rojo--=END_RIGHT (cercano)  Azul···=END_LEFT (lejano)\n'
-                 'Extremo lejano aparece íntegramente a t_rel>4 ns (ToF confirmado, onset 4.72 ns vs 4.98 ns predicho)',
+    fig.suptitle('QA-1c — t_rel per end  |  Grey=BOTH  Red--=END_RIGHT (near)  Blue···=END_LEFT (far)\n'
+                 'Far end appears entirely at t_rel>4 ns (ToF confirmed, onset 4.72 ns vs 4.98 ns predicted)',
                  fontsize=8.5, y=1.01)
     fig.tight_layout(rect=[0, 0.01, 1, 0.97])
     return _save(fig, 'fig01_tof_probe', '_vis')
