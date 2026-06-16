@@ -1,0 +1,5 @@
+material,x_mm,near_end,far_end,t_peak_near_ns,t_peak_far_ns,t_onset_far_ns,delta_t_onset_ns,delta_t_mode_ns,delta_t_pred_ns,rel_diff_pct,frac_near_hi,frac_far_hi,verdict,verdict_detail
+EJ-204,690,RIGHT,LEFT,0.005,6.135,4.735,4.72,6.13,4.9819,5.3,0.2639,0.9219,ToF_CONFIRMADO,onset_rel_diff=5.3%<15%=OK  bump_ratio=0.91<=1.30=OK
+EJ-204,0,RIGHT,LEFT,0.005,0.005,2.015,2.0,0.0,0.0,2000.0,0.2903,0.2922,CONTROL_OK,sym_ratio=0.99 (near=0.290  far=0.292)
+EJ-230,690,RIGHT,LEFT,0.005,5.875,4.755,4.74,5.87,4.9819,4.9,0.187,0.9478,ToF_CONFIRMADO,onset_rel_diff=4.9%<15%=OK  bump_ratio=0.87<=1.30=OK
+EJ-230,0,RIGHT,LEFT,0.005,0.005,2.015,2.0,0.0,0.0,2000.0,0.2139,0.216,CONTROL_OK,sym_ratio=0.99 (near=0.214  far=0.216)

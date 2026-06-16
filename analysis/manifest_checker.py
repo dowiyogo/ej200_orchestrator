@@ -29,15 +29,15 @@ OUTPUTS_PATH  = pathlib.Path("/home/reriosto/SHiP/orchestrator/outputs")
 # These fig_ids use composite SHA (multiple files) or "all-31" input → skip SHA check
 # fig05a/b root_input has literal commas in {0,400,690} → CSV column shift
 # Add them to skip lists; their sidecars are checked by extension-pattern match below.
-SKIP_SHA_FIGS = {"fig02a", "fig02b", "fig04", "fig05a", "fig05b", "fig06"}
+SKIP_SHA_FIGS = {"fig02a", "fig02b", "fig04", "fig05a", "fig05b", "fig06", "fig01_tof_probe"}
 
 # fig05a/b have literal commas in root_input → CSV column shift → wrong salida_* values
 # Standard sidecar check skipped; direct check block handles these.
-SKIP_SIDECAR_CHECK_FIGS = {"fig05a", "fig05b"}
+SKIP_SIDECAR_CHECK_FIGS = {"fig05a", "fig05b", "fig01_tof_probe"}
 
 # These fig_ids have no n_events in meta.json at top level (F2, F3, F4, F5 use nested)
 SKIP_NEVENTS_FIGS = {"fig02a", "fig02b", "fig03a", "fig03b", "fig03c", "fig03d",
-                     "fig04", "fig05a", "fig05b", "fig06"}
+                     "fig04", "fig05a", "fig05b", "fig06", "fig01_tof_probe"}
 
 
 def sha256_file(path: pathlib.Path) -> str:
@@ -160,6 +160,9 @@ def check_manifest(manifest_path: pathlib.Path, outputs_path: pathlib.Path) -> i
             elif "n_events_total_all_positions" in meta:
                 n = meta["n_events_total_all_positions"]
                 print(f"  [INFO] {fid}: n_events_total_all_positions={n} (pooled F2)")
+            elif "cases" in meta:
+                n = sum(c.get("n_events", 0) for c in meta["cases"])
+                print(f"  [INFO] {fid}: n_events via cases={n} ({len(meta['cases'])} cases, QA probe)")
             else:
                 warnings.append(f"{fid}: no n_events in meta.json")
         else:
@@ -170,9 +173,9 @@ def check_manifest(manifest_path: pathlib.Path, outputs_path: pathlib.Path) -> i
             if not ok:
                 errors.append(f"{fid}: n_events={n} outside [1500,3000]")
 
-    # ── Check 2b: direct existence check for fig05a/b (CSV column shift workaround) ──
-    print("\n--- fig05a/b direct sidecar check (CSV comma workaround) ---")
-    for fid in ("fig05a", "fig05b"):
+    # ── Check 2b: direct existence check for fig05a/b + tof_probe (CSV column/comma workaround) ──
+    print("\n--- fig05a/b + fig01_tof_probe direct sidecar check ---")
+    for fid in ("fig05a", "fig05b", "fig01_tof_probe"):
         for ext in (".root", ".csv", ".meta.json"):
             p = outputs_path / f"{fid}{ext}"
             if p.exists():
@@ -192,6 +195,24 @@ def check_manifest(manifest_path: pathlib.Path, outputs_path: pathlib.Path) -> i
                 print(f"  {'[OK] ' if ok else '[ERR]'} {fid} x={x}: n_events={n}")
                 if not ok:
                     errors.append(f"{fid} x={x}: n_events={n} outside [1500,3000]")
+    # Check n_events for fig01_tof_probe (uses 'cases' list in meta)
+    tof_meta_p = outputs_path / "fig01_tof_probe.meta.json"
+    if tof_meta_p.exists():
+        with open(tof_meta_p) as mf:
+            tof_meta = json.load(mf)
+        for case in tof_meta.get("cases", []):
+            n = case.get("n_events", -1)
+            mat = case.get("material", "?")
+            x   = case.get("x_mm", "?")
+            ok  = 1500 <= n <= 3000
+            print(f"  {'[OK] ' if ok else '[ERR]'} fig01_tof_probe {mat} x={x}: n_events={n}")
+            if not ok:
+                errors.append(f"fig01_tof_probe {mat} x={x}: n_events={n} outside [1500,3000]")
+        ov = tof_meta.get("overall_verdict", "?")
+        if ov == "ToF_CONFIRMADO":
+            print(f"  [OK]  fig01_tof_probe overall_verdict={ov}")
+        else:
+            warnings.append(f"fig01_tof_probe overall_verdict={ov} (not ToF_CONFIRMADO)")
 
     # ── Check 5: orphan sidecars ──────────────────────────────────────────────
     print("\n--- Orphan sidecar check ---")

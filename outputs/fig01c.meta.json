@@ -99,10 +99,13 @@
   "time_convention": "time_ns = (GetGlobalTime() + G4RandGauss(0, 20ps)) / ns. t=0 is primary muon generation (Geant4 global clock). Includes: muon transit (~ps, negligible) + scintillation emission delay + optical propagation to SiPM + per-hit Gaussian jitter (20ps sigma). Verified: t_min per event at x=0 ~ 2.8 ns, consistent with 700mm / 27.7 cm/ns.",
   "jitter_per_hit_ps": 20.0,
   "readout_jitter_quadrature_ps": 20.0,
-  "jitter_note": "Per-hit jitter in time_ns (SiPMSD.cc fJitterSigma=20ps default, scan.mac line commented \u2192 uses default) PLUS readout jitter in quadrature (endonly_sum4.py DEFAULT_READOUT_JITTER_PS=20). Same physical value at two stages. Likely double-counting. Pending Ren\u00e9/Gerardo decision.",
+  "jitter_note": "Per-hit jitter in time_ns (SiPMSD.cc fJitterSigma=20ps default, scan.mac line commented → uses default) PLUS readout jitter in quadrature (endonly_sum4.py DEFAULT_READOUT_JITTER_PS=20). Same physical value at two stages. Likely double-counting. Pending René/Gerardo decision.",
   "caption_label": "Intrinseco (Etapa 1): t_rel = t_foton - t_min^ev. Panel izq: 0-2ns bin 2.0ps (rise/pico). Panel der: 0-10ns bin 10ps. Segunda componente NO resuelta incluso en 0-10ns.",
   "comando": "python3.12 f1_sidecar.py fig_id=fig01c",
   "timestamp": "2026-06-16T07:00:03.032319+00:00",
   "exec_tag": "EXEC_14",
-  "geometric_propagation_note": "AVISO FISICO: en x=690mm el muon esta en el extremo derecho del bar. SiPMs End IZQUIERDOS reciben fotones despues de recorrer ~1380mm (retardo propagacion ~5 ns a 27.7 cm/ns). La \"segunda componente\" con tau_slow~4-5 ns puede reflejar este retardo geometrico y NO necesariamente un modo lento de emision de centelleo. Para aislar el perfil de centelleo: usar solo SiPMs del extremo cercano al muon."
+  "geometric_propagation_note": "AVISO FISICO: en x=690mm el muon esta en el extremo derecho del bar. SiPMs End IZQUIERDOS reciben fotones despues de recorrer ~1380mm (retardo propagacion ~5 ns a 27.7 cm/ns). La \"segunda componente\" con tau_slow~4-5 ns puede reflejar este retardo geometrico y NO necesariamente un modo lento de emision de centelleo. Para aislar el perfil de centelleo: usar solo SiPMs del extremo cercano al muon.",
+  "tof_confirmation_qa1c": "QA-1c CONFIRMADO: la segunda componente a tau~4.6-4.9 ns en posicion x=690 mm es time-of-flight del extremo lejano (~1380 mm / 277 mm/ns = 4.98 ns predicho; medido onset=4.72-4.74 ns, rel_diff<6%), NO modo lento de centelleo. Histogramas separados por extremo: extremo lejano (LEFT a x=+690) concentra 92-95% de sus hits en t_rel>3ns; extremo cercano (RIGHT a x=+690) tiene 26% (igual al control x=0), sin exceso de bump. VERDICT: ToF_CONFIRMADO para EJ-204 y EJ-230.",
+  "fit_strategy_post_qa1c": "Ajuste 1-modo es el ajuste fisico del deck (chi2/ndf~1.93 en x=0). Ajuste 2-modos etiquetado: incluye contribucion ToF, no separacion de modos de emision. NO presentar la segunda componente como modo lento de centelleo en posiciones asimetricas.",
+  "tof_qa1c_timestamp": "2026-06-16T07:45:12.190204+00:00"
 }
