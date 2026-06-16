@@ -1,136 +1,143 @@
 % EXEC_14 — Beamer compendium EJ-204 vs EJ-230
-% Reunión de Colaboración SHiP Detector de Tiempo, 15-16 junio 2026
+% SHiP Timing Detector Collaboration Meeting, 15–16 June 2026
+% QA-3b: translated to EN; ToF diagram slide; 3 content fixes; F7 order-statistics
 % Compile: lualatex exec14_deck.tex && lualatex exec14_deck.tex
 \documentclass[aspectratio=169,9pt]{beamer}
 
-% ── Tema ─────────────────────────────────────────────────────────────────────
+% ── Theme ─────────────────────────────────────────────────────────────────────
 \usetheme{Madrid}
 \usecolortheme{default}
 \setbeamertemplate{navigation symbols}{}
 \setbeamerfont{frametitle}{size=\normalsize,series=\bfseries}
 \setbeamerfont{framesubtitle}{size=\small}
 
-% ── Fuentes (LuaLaTeX) ───────────────────────────────────────────────────────
+% ── Fonts (LuaLaTeX) ─────────────────────────────────────────────────────────
 \usepackage{fontspec}
 \setsansfont{DejaVu Sans}[Scale=0.93]
 \setmonofont{DejaVu Sans Mono}[Scale=0.85]
 
-% ── Paquetes ─────────────────────────────────────────────────────────────────
-% babel omitido: lualatex maneja Unicode nativo; hyphenation patterns no necesarios en slides
+% ── Packages ──────────────────────────────────────────────────────────────────
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{xcolor}
 \usepackage{siunitx}
 \sisetup{separate-uncertainty=true}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
 
 \graphicspath{{outputs/}}
 
-% ── Colores SHiP / materiales ────────────────────────────────────────────────
+% ── Colors ────────────────────────────────────────────────────────────────────
 \definecolor{ej204col}{HTML}{1f78b4}
 \definecolor{ej230col}{HTML}{e31a1c}
 \definecolor{okgreen}{HTML}{2ca02c}
 \definecolor{pendgold}{HTML}{d4a017}
 
-% ── Metadatos ────────────────────────────────────────────────────────────────
+% ── Metadata ──────────────────────────────────────────────────────────────────
 \title[EJ-204 vs EJ-230 — SHiP Timing]{%
-  Simulación Óptica de Barras Centelleadoras\\
-  \large EJ-204 vs EJ-230 para el Detector de Tiempo SHiP}
+  Optical Simulation of Scintillator Bars\\
+  \large EJ-204 vs EJ-230 for the SHiP Timing Detector}
 \author[R.~Ríos / G.~Vásquez]{%
   René Ríos \and Gerardo Vásquez}
-\institute[SHiP Timing]{SHiP Collaboration — Grupo Detector de Tiempo}
-\date{15--16 junio 2026}
+\institute[SHiP Timing]{SHiP Collaboration — Timing Detector Group}
+\date{15--16 June 2026}
 
-% ═════════════════════════════════════════════════════════════════════════════
+% ══════════════════════════════════════════════════════════════════════════════
 \begin{document}
 
 \begin{frame}[plain]
   \titlepage
 \end{frame}
 
-% ── Contenido ────────────────────────────────────────────────────────────────
-\begin{frame}{Contenido}
+\begin{frame}{Contents}
   \tableofcontents
 \end{frame}
 
-% ═════════════════════════════════════════════════════════════════════════════
-\section{Configuración y geometría}
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Setup and geometry}
 
-\begin{frame}{Geometría de la barra y electrónica SiPM}
+\begin{frame}{Bar geometry and SiPM readout}
   \begin{columns}[T]
     \begin{column}{0.50\textwidth}
-      \textbf{Barra centelleadora (GEANT4):}
+      \textbf{Scintillator bar (GEANT4):}
       \begin{itemize}
-        \item Longitud activa: \SI{1400}{\mm} ($\pm700$\,mm en $x$)
-        \item Recubrimiento: Mylar reflectivo
-        \item $v_\text{eff} = 277$\,mm/ns (propagación axial)
-        \item Dos materiales comparados en paralelo:
-          \textcolor{ej204col}{\textbf{EJ-204}} vs \textcolor{ej230col}{\textbf{EJ-230}}
+        \item Active length: \SI{1400}{\mm} ($\pm700$\,mm along $x$)
+        \item Coating: reflective Mylar
+        \item $v_\text{eff}\approx277$\,mm/ns (nominal axial average)
+        \item[$\hookrightarrow$] {\footnotesize ToF onset measures $v_\text{eff}^\text{onset}\approx292$\,mm/ns
+              ($+5\%$): set by the most direct rays, not the mean path (see QA-1c)}
+        \item Two materials compared in parallel:\\
+              \textcolor{ej204col}{\textbf{EJ-204}} vs
+              \textcolor{ej230col}{\textbf{EJ-230}}
       \end{itemize}
-      \vspace{0.4em}
-      \textbf{SiPMs End (timing principal):}
+      \vspace{0.2em}
+      \textbf{End SiPMs (primary timing):}
       \begin{itemize}
-        \item 16 SiPMs en total (IDs 0–15)
-        \item END\_LEFT: IDs 0–7 en $x=-700$\,mm
-        \item END\_RIGHT: IDs 8–15 en $x=+700$\,mm
-        \item Estimador timing: \textbf{SUM4} ($\min$ de comb. 4 vecinos)
+        \item 16 SiPMs total (IDs 0–15)
+        \item END\_LEFT: IDs 0–7 at $x=-700$\,mm
+        \item END\_RIGHT: IDs 8–15 at $x=+700$\,mm
+        \item Timing estimator: \textbf{SUM4} ($\min$ over 4-neighbor clusters)
       \end{itemize}
     \end{column}
     \begin{column}{0.48\textwidth}
-      \textbf{SiPMs Top (veto / tracking):}
+      \textbf{Top SiPMs (veto / tracking):}
       \begin{itemize}
-        \item 70 SiPMs, hilera única en $Y=+30.25$\,mm
+        \item 70 SiPMs, single row at $Y=+30.25$\,mm
         \item TOP\_LEFT: IDs 16–50 / TOP\_RIGHT: 51–85
-        \item Paso: \SI{20}{\mm} en $X$; gap central \SI{24}{\mm}
+        \item Pitch: \SI{20}{\mm} in $X$; central gap \SI{24}{\mm}
       \end{itemize}
-      \vspace{0.4em}
-      \textbf{Estadística GEANT4:}
+      \vspace{0.3em}
+      \textbf{GEANT4 statistics:}
       \begin{center}
         \small
         \begin{tabular}{lrr}
           \toprule
-          Dataset & Eventos & Posiciones \\
+          Dataset & Events & Positions \\
           \midrule
           EJ-204 End & 2000/pos & 31 \\
           EJ-230 End & 2000/pos & 31 \\
           EJ-204 EndTop & 2000/pos & 31 \\
           \bottomrule
-        \end{tabular}
-        \\[0.3em]
-        {\footnotesize Posiciones: $x = 0, \pm50, \ldots, \pm690$\,mm}
+        \end{tabular}\\[0.2em]
+        {\footnotesize Positions: $x = 0, \pm50, \ldots, \pm690$\,mm}
       \end{center}
     \end{column}
   \end{columns}
 \end{frame}
 
-% ═════════════════════════════════════════════════════════════════════════════
-\section{Forma temporal de fotones — F1}
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Photon arrival-time profile — F1}
 
-\begin{frame}{F1: Distribución temporal $t_\text{rel}$ — posición central $x=0$}
+\begin{frame}{F1: Relative arrival time $t_\text{rel}$ — central position $x=0$}
   \framesubtitle{%
-    \textcolor{ej204col}{\textbf{EJ-204}} (izq.) vs
-    \textcolor{ej230col}{\textbf{EJ-230}} (der.) —
-    ajuste 1-modo: $N(1-e^{-t/\tau_r})\,e^{-t/\tau_f}$}
+    \textcolor{ej204col}{\textbf{EJ-204}} (left) vs
+    \textcolor{ej230col}{\textbf{EJ-230}} (right) —
+    1-mode fit: $N(1-e^{-t/\tau_r})\,e^{-t/\tau_f}$}
   \begin{columns}[c]
     \begin{column}{0.49\textwidth}
       \centering
-      \includegraphics[height=0.70\textheight,keepaspectratio]{fig01a.pdf}
+      \includegraphics[height=0.60\textheight,keepaspectratio]{fig01a.pdf}
     \end{column}
     \begin{column}{0.49\textwidth}
       \centering
-      \includegraphics[height=0.70\textheight,keepaspectratio]{fig01d.pdf}
+      \includegraphics[height=0.60\textheight,keepaspectratio]{fig01d.pdf}
     \end{column}
   \end{columns}
-  \vspace{0.2em}
+  \vspace{0.1em}
   \begin{center}
     {\footnotesize
-      $t_\text{rel}=t_\text{fotón}-\min(t_\text{End})$ por evento. \quad
+      $t_\text{rel}=t_\text{photon}-\min(t_\text{End})$ per event. \quad
       EJ-204: $\tau_r=1.50$\,ns, $\tau_f=1.70$\,ns ($\chi^2/\text{ndf}=1.93$). \quad
-      EJ-230: $\tau_r=1.47$\,ns, $\tau_f=1.04$\,ns ($\chi^2/\text{ndf}=17.78$ — coda residual).}
+      EJ-230: $\tau_r=1.47$\,ns, $\tau_f=1.04$\,ns ($\chi^2/\text{ndf}=17.8$). \\[0.2em]
+      \textit{Fitted $\tau$ describe the arrival-time profile (emission $\otimes$ propagation),
+      NOT the datasheet emission constants (EJ-204: $\tau_r^{(0)}=0.7$\,ns, $\tau_d^{(0)}=1.8$\,ns).} \\
+      EJ-230 tail at $x=0$: \textbf{cannot} be ToF (ends equidistant);
+      origin undetermined — slow mode vs reflections.}
   \end{center}
 \end{frame}
 
-\begin{frame}{F1: Distribución temporal $t_\text{rel}$ — borde $x=+690$\,mm}
-  \framesubtitle{Segunda componente a $\sim4.7$\,ns visible en ambos materiales}
+\begin{frame}{F1: Relative arrival time $t_\text{rel}$ — edge position $x=+690$\,mm}
+  \framesubtitle{Second component at $\sim4.7$\,ns visible in both materials}
   \begin{columns}[c]
     \begin{column}{0.49\textwidth}
       \centering
@@ -144,73 +151,124 @@
   \vspace{0.2em}
   \begin{center}
     {\footnotesize
-      Ajuste 1-modo falla en $x=690$: $\chi^2/\text{ndf}=886$ (EJ-204), $\chi^2/\text{ndf}=721$ (EJ-230). \quad
-      Cola 3--8\,ns: \textbf{no} es modo lento de centelleo — ver QA-1c.}
+      1-mode fit fails at $x=+690$: $\chi^2/\text{ndf}=886$ (EJ-204), $721$ (EJ-230). \quad
+      Tail 3--8\,ns: \textbf{not} slow scintillation — see ToF diagram below and QA-1c.}
   \end{center}
 \end{frame}
 
-% ═════════════════════════════════════════════════════════════════════════════
-\section{Verificación ToF — QA-1c}
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Geometric time-of-flight — QA-1c}
 
-\begin{frame}{QA-1c: Segunda componente F1 = tiempo de vuelo geométrico}
+% ── NEW SLIDE: ToF diagram ───────────────────────────────────────────────────
+\begin{frame}{Why a second component appears at the edge — geometric time-of-flight}
+  \begin{center}
+  \begin{tikzpicture}[x=0.78cm, y=1.05cm, >=Stealth]
+
+    % ── Bar body ──────────────────────────────────────────────────────────────
+    \fill[gray!12] (-7,-0.40) rectangle (7,0.40);
+    \draw[thick, gray!50] (-7,-0.40) rectangle (7,0.40);
+
+    % ── END_LEFT SiPM (far end at x=-700 mm) ─────────────────────────────────
+    \fill[ej204col!70] (-7.02,-0.58) rectangle (-6.72,0.58);
+    \node[left, font=\scriptsize\bfseries, text=ej204col!80!black, align=right]
+        at (-7.12, 0.20) {END\_LEFT\\(far end)};
+
+    % ── END_RIGHT SiPM (near end at x=+700 mm) ───────────────────────────────
+    \fill[ej204col!35!gray] (6.72,-0.58) rectangle (7.02,0.58);
+    \node[right, font=\scriptsize\bfseries, text=ej204col!60!black, align=left]
+        at (7.12, 0.20) {END\_RIGHT\\(near end)};
+
+    % ── Muon at x=+690 mm (≈ +6.9 units) ────────────────────────────────────
+    \draw[very thick, purple!80!black, ->] (6.90,1.65) -- (6.90,0.46);
+    \node[above, font=\footnotesize\bfseries, text=purple!80!black]
+        at (6.90,1.65) {$\mu$\ at\ $x=+690$\,mm};
+
+    % ── Short path to near end (10 mm, ~0 ns) ────────────────────────────────
+    \draw[very thick, red!70!black, ->] (6.90, 0.0) -- (6.73, 0.0);
+    \node[above, font=\scriptsize, text=red!70!black] at (6.82, 0.18) {10\,mm};
+    \node[below, font=\scriptsize, text=red!70!black] at (6.82,-0.15) {$t_1\approx0$\,ns};
+
+    % ── Long path to far end (1380 mm, ~4.7 ns) — curved arc above bar ───────
+    \draw[very thick, blue!65!black, ->]
+        (6.90, 0.40) to[bend left=22]
+        node[above, pos=0.50, font=\scriptsize, text=blue!55!black]
+        {1380\,mm \ $\Longrightarrow$ \ $\Delta t \approx 4.7$\,ns}
+        (-6.72, 0.40);
+
+    % ── Bar length annotation ─────────────────────────────────────────────────
+    \draw[<->, gray!55, thin] (-7,-0.80) -- (7,-0.80);
+    \node[below, gray!55, font=\tiny] at (0,-0.80) {1400\,mm active length};
+
+    % ── Key message ──────────────────────────────────────────────────────────
+    \node[draw=orange!75!black, fill=orange!8, rounded corners=4pt,
+          text width=11.6cm, align=center, font=\small\bfseries]
+        at (0,-1.70)
+        {The late bump is the \emph{same} photons reaching the \emph{far end} —
+         not slow scintillation.};
+
+  \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{QA-1c: Second F1 component confirmed as geometric ToF}
   \begin{columns}[c]
     \begin{column}{0.63\textwidth}
       \centering
       \includegraphics[width=\textwidth,keepaspectratio]{fig01_tof_probe_vis.pdf}
     \end{column}
     \begin{column}{0.35\textwidth}
-      \textbf{Predicción ToF ($x=+690$\,mm):}
+      \textbf{ToF prediction ($x=+690$\,mm):}
       \[
         \Delta t_\text{pred} = \frac{1380\,\text{mm}}{277\,\text{mm/ns}}
         \approx 4.98\,\text{ns}
       \]
 
-      \textbf{Onset medido (extremo lejano):}
+      \textbf{Measured onset (far end):}
       \begin{itemize}
         \item \textcolor{ej204col}{EJ-204}: $4.72$\,ns \hfill $(-5.3\%)$
         \item \textcolor{ej230col}{EJ-230}: $4.74$\,ns \hfill $(-4.9\%)$
       \end{itemize}
 
-      \vspace{0.5em}
-      \textbf{Veredicto:}\\
-      \textcolor{okgreen}{\textbf{ToF\_CONFIRMADO}}\\[0.3em]
+      \vspace{0.4em}
+      \textbf{Verdict:}\\
+      \textcolor{okgreen}{\textbf{ToF\_CONFIRMED}}\\[0.3em]
       {\footnotesize
-        END\_LEFT (extremo lejano) aporta solo $\sim2\%$ de los hits 3--8\,ns.
-        La cola es $98\%$ fotones dispersados del extremo cercano,
-        pero el \emph{onset} geométrico es claro.}
+        The $-5\%$ offset reflects $v_\text{eff}^\text{onset}\approx292$\,mm/ns
+        — the fastest (most direct) optical rays arrive first,
+        pulling the onset earlier than the mean-path prediction.}
     \end{column}
   \end{columns}
 \end{frame}
 
-% ═════════════════════════════════════════════════════════════════════════════
-\section{Distribución espacial — F3}
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Spatial hit distribution — F3}
 
-\begin{frame}{F3: Distribución espacial de impactos en SiPMs}
-  \framesubtitle{Un evento representativo — EJ-204 (EJ-230 cualitativamente idéntico)}
+\begin{frame}{F3: Spatial distribution of photon impacts on SiPMs}
+  \framesubtitle{Single representative event — EJ-204 (EJ-230 qualitatively identical)}
   \begin{columns}[c]
     \begin{column}{0.49\textwidth}
       \centering
       \includegraphics[width=\textwidth,keepaspectratio]{fig03a.pdf}\\
-      {\footnotesize $x_\text{gun}=0$\,mm — distribución simétrica L/R}
+      {\footnotesize $x_\text{gun}=0$\,mm — symmetric L/R distribution}
     \end{column}
     \begin{column}{0.49\textwidth}
       \centering
       \includegraphics[width=\textwidth,keepaspectratio]{fig03b.pdf}\\
-      {\footnotesize $x_\text{gun}=+690$\,mm — colapso hacia END\_RIGHT}
+      {\footnotesize $x_\text{gun}=+690$\,mm — collapse toward END\_RIGHT}
     \end{column}
   \end{columns}
-  \vspace{0.3em}
+  \vspace{0.2em}
   {\footnotesize
-    \textit{Nota:} Los puntos son \emph{impactos de fotones en la ventana del SiPM}
-    (NO trayectorias en el volumen centelleador). Proxy de propagación óptica.
-    Reconstruido desde branches \texttt{x\_mm}/\texttt{y\_mm}/\texttt{z\_mm} del ROOT — sin re-simulación.}
+    \textit{Note:} Points are \emph{photon impacts on the SiPM window}
+    (NOT trajectories inside the scintillator volume). Proxy of optical propagation.
+    Reconstructed from \texttt{x\_mm}/\texttt{y\_mm}/\texttt{z\_mm} ROOT branches — no re-simulation.}
 \end{frame}
 
-% ═════════════════════════════════════════════════════════════════════════════
-\section{$N_{pe}$ vs umbral y Top — F2, F4}
+% ══════════════════════════════════════════════════════════════════════════════
+\section{$N_{pe}$ threshold and Top profiles — F2, F4}
 
-\begin{frame}{F2: $\sigma_t$ de ensemble vs umbral $N_\text{pe}$ End}
-  \framesubtitle{Ambos materiales saturados al 100\% — el umbral \emph{no} discrimina}
+\begin{frame}{F2: Ensemble $\sigma_t$ vs End $N_\text{pe}$ threshold}
+  \framesubtitle{Both materials saturated at 100\% — threshold \emph{does not} discriminate}
   \begin{columns}[c]
     \begin{column}{0.48\textwidth}
       \centering
@@ -223,44 +281,45 @@
       {\footnotesize \textcolor{ej230col}{\textbf{EJ-230}}}
     \end{column}
   \end{columns}
-  \vspace{0.3em}
+  \vspace{0.2em}
   {\footnotesize
-    Todos los eventos pasan umbrales 5--25\,PE ($N_\text{pe}^\text{End}\gg25$).
-    $\sigma\approx5$\,ns refleja \textbf{dispersión posicional} sobre 31 posiciones,
-    no resolución intrínseca.
-    Resolución por posición: ver F5.}
+    All events pass thresholds 5--25\,PE ($N_\text{pe}^\text{End}\gg25$).
+    $\sigma\approx5$\,ns reflects \textbf{positional spread} across 31 positions,
+    not intrinsic resolution. Per-position resolution: see F5.}
 \end{frame}
 
-\begin{frame}{F4: Perfiles $\langle N_\text{pe}\rangle$ Top vs posición (EJ-204 EndTop)}
+\begin{frame}{F4: $\langle N_\text{pe}\rangle$ Top profiles vs position (EJ-204 EndTop)}
   \centering
   \includegraphics[width=0.80\textwidth,keepaspectratio]{fig04.pdf}
-  \vspace{0.3em}
+  \vspace{0.2em}
 
   \begin{itemize}
-    \item T4 y T20 \textbf{saturadas al 100\%} en todas las posiciones:
-          el Top nunca baja de 20\,PE — señal robusta en todo el rango cinemático.
-    \item La curva ``Nearest'' oscila por el espaciado discreto de \SI{20}{\mm}.
-    \item {\color{pendgold}\textbf{Pendiente Gerardo:}}
-          ¿T4/T20 es corte en $N_\text{pe}$ total (implementado) o eficiencia de trigger SUM4 Top?
+    \item T4 and T20 \textbf{saturated at 100\%} at all positions:
+          Top never falls below 20\,PE — robust signal across the full kinematic range.
+    \item ``Nearest'' curve oscillates with the discrete \SI{20}{\mm} SiPM pitch.
+    \item {\color{pendgold}\textbf{Open — Gerardo:}}
+          Is T4/T20 a cut on total $N_\text{pe}$ (as implemented) or a SUM4 trigger efficiency?
   \end{itemize}
 \end{frame}
 
-% ═════════════════════════════════════════════════════════════════════════════
-\section{Resolución temporal SUM4 — F5}
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Timing resolution SUM4 — F5}
 
-\begin{frame}{F5: Resolución temporal SUM4 L/R — \textcolor{ej204col}{EJ-204}}
-  \framesubtitle{$\sigma_t=\sigma(\Delta T_{LR})/\sqrt{2}$; jitter 20\,ps/hit (Etapa~1); sin time-walk ni readout jitter}
+\begin{frame}{F5: SUM4 L/R timing resolution — \textcolor{ej204col}{EJ-204}}
+  \framesubtitle{$\sigma_t=\sigma(\Delta T_{LR})/\sqrt{2}$;\quad
+    jitter 20\,ps/hit (Stage~1);\quad no time-walk or readout jitter}
   \centering
   \includegraphics[width=0.76\textwidth,keepaspectratio]{fig05a.pdf}
 \end{frame}
 
-\begin{frame}{F5: Resolución temporal SUM4 L/R — \textcolor{ej230col}{EJ-230}}
-  \framesubtitle{$\sigma_t=\sigma(\Delta T_{LR})/\sqrt{2}$; mismos caveats Etapa~1 — degradación posicional más fuerte que EJ-204}
+\begin{frame}{F5: SUM4 L/R timing resolution — \textcolor{ej230col}{EJ-230}}
+  \framesubtitle{$\sigma_t=\sigma(\Delta T_{LR})/\sqrt{2}$;\quad
+    same Stage~1 caveats — stronger positional degradation than EJ-204}
   \centering
   \includegraphics[width=0.76\textwidth,keepaspectratio]{fig05b.pdf}
 \end{frame}
 
-\begin{frame}{Comparativa de resolución temporal: EJ-204 vs EJ-230}
+\begin{frame}{Timing resolution comparison: EJ-204 vs EJ-230}
   \begin{center}
     \large
     \begin{tabular}{lrrr}
@@ -273,37 +332,40 @@
       \bottomrule
     \end{tabular}
   \end{center}
-  \vspace{0.8em}
+  \vspace{0.4em}
   \begin{columns}[T]
     \begin{column}{0.52\textwidth}
-      \textbf{Observaciones:}
+      \textbf{Key observations:}
       \begin{itemize}
-        \item Resolución central \textbf{equivalente}: $141\approx139$\,ps
-        \item EJ-204 $\sim15\%$ mejor en el borde ($365$ vs $419$\,ps)
-        \item EJ-230 degrada más rápido con la posición\\
-              ($+201\%$ vs $+159\%$ de $x=0$ a $x=690$)
-        \item $\tau_f^\text{EJ-204}=1.70$\,ns vs $\tau_f^\text{EJ-230}=1.04$\,ns:\\
-              EJ-230 más rápido pero con coda residual
+        \item Central resolution \textbf{equivalent}: $141\approx139$\,ps
+        \item EJ-204 $\sim15\%$ better at the edge ($365$ vs $419$\,ps)
+        \item EJ-230 degrades faster with position\\
+              ($+201\%$ vs $+159\%$ from $x=0$ to $x=690$)
+        \item Fitted $\tau_f$: arrival-time profile (emission $\otimes$\ propagation)\\
+              \textit{not} datasheet constants\\
+              (EJ-204: $\tau_r^{(0)}=0.7$\,ns, $\tau_d^{(0)}=1.8$\,ns)
       \end{itemize}
     \end{column}
     \begin{column}{0.46\textwidth}
       {\small \color{gray}
-      \textit{Caveats — Etapa 1 (sin electrónica real):}
+      \textit{Caveats — Stage 1 (no real electronics):}
       \begin{itemize}
-        \item Jitter 20\,ps/hit: posible doble conteo (L+R)
-        \item Sin correción de time-walk (ToT)
-        \item Sin readout jitter adicional
-        \item Topología SUM4: pendiente confirmación
+        \item Jitter 20\,ps/hit: possible double-count (L+R)
+        \item No time-walk correction (ToT)
+        \item No readout jitter applied
+        \item SUM4 topology: pending Gerardo
+        \item Recovering emission constants\\
+              requires deconvolution — Stage 2
       \end{itemize}
       }
     \end{column}
   \end{columns}
 \end{frame}
 
-% ═════════════════════════════════════════════════════════════════════════════
-\section{Redundancia Top — F6}
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Top SiPM redundancy — F6}
 
-\begin{frame}{F6: Redundancia de SiPMs Top — correlación $N_\text{pe}$ entre vecinos}
+\begin{frame}{F6: Top SiPM redundancy — $N_\text{pe}$ correlation between neighbors}
   \centering
   \includegraphics[width=0.88\textwidth,keepaspectratio]{fig06.pdf}
 
@@ -311,70 +373,108 @@
   \begin{columns}[T]
     \begin{column}{0.32\textwidth}
       \centering
-      \textbf{Par A (IDs 49/52)}\\
-      sep $=64$\,mm, lados opuestos\\
-      $r=-0.37$ — complementario\\
-      {\footnotesize (luz se reparte entre ambos lados)}
+      \textbf{Pair A (IDs 49/52)}\\
+      sep $=64$\,mm, opposite sides\\
+      $r=-0.37$ — complementary\\
+      {\footnotesize (light splits between sides)}
     \end{column}
     \begin{column}{0.32\textwidth}
       \centering
-      \textbf{Par B (IDs 50/51)}\\
-      sep $=24$\,mm, adyacentes al gap\\
-      $r=+0.88$ — \textbf{redundantes}\\
-      {\footnotesize (misma fuente de luz)}
+      \textbf{Pair B (IDs 50/51)}\\
+      sep $=24$\,mm, across gap\\
+      $r=+0.88$ — \textbf{redundant}\\
+      {\footnotesize (same light source)}
     \end{column}
     \begin{column}{0.32\textwidth}
       \centering
-      \textbf{Par C (IDs 47/49)}\\
-      sep $=40$\,mm, mismo lado\\
+      \textbf{Pair C (IDs 47/49)}\\
+      sep $=40$\,mm, same side\\
       $r=+0.90$ — \textbf{control}\\
-      {\footnotesize (correlación local esperada)}
+      {\footnotesize (local correlation expected)}
     \end{column}
   \end{columns}
 \end{frame}
 
-% ═════════════════════════════════════════════════════════════════════════════
-\section{Resumen}
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Optical path dispersion — F7}
 
-\begin{frame}{Resumen y puntos abiertos}
+\begin{frame}{F7: Order-statistic arrival time $\langle t_n\rangle$ per Top channel —
+              $x=-690$\,mm}
+  \framesubtitle{Statistical floor $\sqrt{n}\,\tau_d/\langle N_\text{pe}\rangle$
+    ($\tau_d=1.8$\,ns, EJ-204 datasheet); gap = optical path dispersion}
+  \begin{columns}[c]
+    \begin{column}{0.60\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,keepaspectratio]{fig07.pdf}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \textbf{What the axes show:}
+      \begin{itemize}
+        \item $x$-axis: $n$ = index of the $n$-th detected photon (order statistic)
+        \item $y$-axis: $\langle t_n\rangle$ [ns] — mean arrival time per event
+        \item Error bars: RMS over events
+        \item Band: statistical floor
+              $\sigma_\text{stat}(t_n) = \sqrt{n}\,\tau_d/\langle N_\text{pe}\rangle$
+      \end{itemize}
+      \vspace{0.4em}
+      \textbf{Physics:}\\
+      {\footnotesize
+        $\text{RMS} - \sigma_\text{floor}$ isolates
+        \textbf{optical path dispersion} — the same spread that broadens $\sigma_t$
+        and shifts $v_\text{eff}^\text{onset}$ vs nominal.\\[0.3em]
+        At $x=-690$: cluster uses IDs 16–24
+        ($x_w=-692\to-532$\,mm) — truncated at the left edge; no channels further left.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Summary}
+
+\begin{frame}{Summary and open questions}
   \begin{columns}[T]
     \begin{column}{0.54\textwidth}
-      \textbf{Resultados principales:}
+      \textbf{Main results:}
       \begin{enumerate}
         \item \textcolor{ej204col}{\textbf{EJ-204}} $\approx$
-              \textcolor{ej230col}{\textbf{EJ-230}} en el centro
-              ($141$ vs $139$\,ps);
-              EJ-204 \textbf{mejor en bordes} ($365$ vs $419$\,ps a $x=690$)
+              \textcolor{ej230col}{\textbf{EJ-230}} at center ($141$ vs $139$\,ps);
+              EJ-204 \textbf{better at edges} ($365$ vs $419$\,ps at $x=690$)
 
-        \item Componente F1 a $\sim4.7$\,ns en $x=690$ =
-              \textcolor{okgreen}{\textbf{ToF geométrico}} del extremo lejano
-              (QA-1c, $\delta=-5\%$). No es modo lento de centelleo.
+        \item F1 component at $\sim4.7$\,ns at $x=690$ =
+              \textcolor{okgreen}{\textbf{geometric ToF}} from far end
+              (QA-1c, $\delta=-5\%$). Not slow scintillation.
 
-        \item Top SiPM: señal robusta ($>20$\,PE), sensores del gap central
-              altamente correlacionados ($r\approx0.88$)
+        \item $v_\text{eff}^\text{nominal}=277$\,mm/ns;
+              onset gives $v_\text{eff}^\text{onset}\approx292$\,mm/ns ($+5\%$)
+              — fastest optical paths set the onset
 
-        \item EJ-230 tiene $\tau_f$ más corto ($1.0$ vs $1.7$\,ns) pero mayor
-              degradación posicional y coda residual en $\chi^2$
+        \item F7: $\langle t_n\rangle$ RMS exceeds the statistical floor
+              (order-statistics limit) — quantifies optical path dispersion;
+              same physics as $\sigma_t$ degradation toward edges
+
+        \item Top: robust $>20$\,PE; gap-adjacent SiPMs
+              highly correlated ($r\approx0.88$)
       \end{enumerate}
     \end{column}
     \begin{column}{0.44\textwidth}
-      \textbf{\color{pendgold} Pendientes — confirmación Gerardo:}
+      \textbf{\color{pendgold} Open — Gerardo confirmation:}
       \begin{itemize}
-        \item[$\square$] Topología SUM4:
-              winner-takes-first vs suma de clusters
-        \item[$\square$] Definición T4/T20:
-              corte en $N_\text{pe}$ o eficiencia de trigger
-        \item[$\square$] Jitter 20\,ps: conteo simple o doble (L+R)
-        \item[$\square$] F3: impactos SiPM vs trayectorias en volumen
-        \item[$\square$] Anticorrelación Par A ($r=-0.37$):
-              geométrica o reflexiones
+        \item[$\square$] SUM4 topology:
+              winner-takes-first vs cluster sum
+        \item[$\square$] T4/T20: $N_\text{pe}$ cut or trigger efficiency
+        \item[$\square$] Jitter 20\,ps: single or double-count (L+R)
+        \item[$\square$] F3: SiPM impacts vs volume trajectories
+        \item[$\square$] Pair A ($r=-0.37$):
+              geometric or reflections
+        \item[$\square$] EJ-230 tail at $x=0$:
+              slow mode or reflections?
       \end{itemize}
-      \vspace{0.4em}
-      \textbf{Próximos pasos:}
+      \vspace{0.3em}
+      \textbf{Next steps:}
       \begin{itemize}
-        \item Medición $v_\text{eff}$ desde onset ToF ($\sim292$\,mm/ns, axial)
-        \item Dataset EJ-230 EndTop (respuesta Top)
-        \item Etapa 2: time-walk, readout jitter, electrónica real
+        \item EJ-230 EndTop dataset (Top response)
+        \item Stage 2: time-walk, readout jitter, real electronics
+        \item Deconvolution: emission constants from arrival profiles
       \end{itemize}
     \end{column}
   \end{columns}
