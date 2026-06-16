@@ -7,15 +7,14 @@
   "x_mm": 690,
   "root_input": "/home/reriosto/SHiP/t0minidaq/endonly_mylar_20260614/photon_hits_x690mm.root",
   "sha256_input": "61435a5c9e69350aed0ca07612483bb3c78b879b1b5edd3fe7215e2e67037d55",
-  "binning": "2.0 ps primary, 2.5 ps variant; fit range [0.004,2.0] ns",
-  "escala": "Y logaritmico (figura principal); Y lineal (h_trel_alt tambien en .root)",
   "n_hits_total": 5862560,
   "n_events": 2000,
-  "n_trel_hits_0_2ns": 3132358,
+  "n_trel_0_2ns": 3132358,
+  "n_trel_0_10ns": 5823602,
   "t_min_per_event_median_ns": 0.2575863628189381,
   "t_min_per_event_p5_ns": 0.24767143254330032,
   "t_min_per_event_p95_ns": 0.2582923466549289,
-  "fit_double_decay": {
+  "fit_double_decay_2ns": {
     "N": 1189.1939073012045,
     "N_err": 618789510623.6025,
     "tau_rise_ns": 1.4496452869401228,
@@ -34,7 +33,7 @@
     "status": 3,
     "model": "N*(1-exp(-t/tau_rise))*(A_fast*exp(-t/tau_fast)+A_slow*exp(-t/tau_slow))"
   },
-  "fit_single_decay": {
+  "fit_single_decay_2ns": {
     "N": 189.90547887487094,
     "N_err": 614919598265.0417,
     "tau_rise_ns": 1.4937343574909754,
@@ -49,19 +48,61 @@
     "status": 3,
     "model": "N*(1-exp(-t/tau_rise))*A_fast*exp(-t/tau_fast)"
   },
-  "slow_component_significance": {
+  "slow_significance_2ns": {
     "delta_chi2": 51526.01779994469,
     "delta_ndf": 2,
     "A_slow_significance_sigma": 3.1959159217340267e-10,
     "second_component_resolved": false,
-    "note": "Segunda componente NO resuelta a esta posicion (propagacion o escasez de fotones enmascara el modo lento)"
+    "note": "Segunda componente NO resuelta (propagacion/estadistica enmascarada)"
+  },
+  "fit_double_decay_10ns": {
+    "N": 4.575372659952961,
+    "N_err": 0.014019682767138608,
+    "tau_rise_ns": 0.5628598194052511,
+    "tau_rise_err_ns": 0.0006951194853859755,
+    "A_fast": 7687.523698657935,
+    "A_fast_err": 23.013743096270446,
+    "tau_fast_ns": 2.054708624176943,
+    "tau_fast_err_ns": 0.0006897965032592879,
+    "A_slow": 0.4610831050191715,
+    "A_slow_err": 0.029519822458863587,
+    "tau_slow_ns": 4.574862820837442,
+    "tau_slow_err_ns": 0.7033265230114061,
+    "chi2": 65801.85619334434,
+    "ndf": 993,
+    "chi2_ndf": 66.26571620679188,
+    "status": 3,
+    "model": "N*(1-exp(-t/tau_rise))*(A_fast*exp(-t/tau_fast)+A_slow*exp(-t/tau_slow))"
+  },
+  "fit_single_decay_10ns": {
+    "N": 755.2492276594134,
+    "N_err": 0.14346474854454527,
+    "tau_rise_ns": 1.487828366939615,
+    "tau_rise_err_ns": 6.013651418834698e-06,
+    "A_fast": 152.97394550248862,
+    "A_fast_err": 0.028109029318571288,
+    "tau_fast_ns": 1.0315236596349688,
+    "tau_fast_err_ns": 1.4086211339098136,
+    "chi2": 881474.4075055852,
+    "ndf": 995,
+    "chi2_ndf": 885.9039271412917,
+    "status": 3,
+    "model": "N*(1-exp(-t/tau_rise))*A_fast*exp(-t/tau_fast)"
+  },
+  "slow_significance_10ns": {
+    "delta_chi2": 815672.5513122409,
+    "delta_ndf": 2,
+    "A_slow_significance_sigma": 15.619440315459189,
+    "second_component_resolved": false,
+    "note": "Segunda componente NO resuelta (propagacion/estadistica enmascarada)"
   },
   "time_convention": "time_ns = (GetGlobalTime() + G4RandGauss(0, 20ps)) / ns. t=0 is primary muon generation (Geant4 global clock). Includes: muon transit (~ps, negligible) + scintillation emission delay + optical propagation to SiPM + per-hit Gaussian jitter (20ps sigma). Verified: t_min per event at x=0 ~ 2.8 ns, consistent with 700mm / 27.7 cm/ns.",
   "jitter_per_hit_ps": 20.0,
   "readout_jitter_quadrature_ps": 20.0,
   "jitter_note": "Per-hit jitter in time_ns (SiPMSD.cc fJitterSigma=20ps default, scan.mac line commented \u2192 uses default) PLUS readout jitter in quadrature (endonly_sum4.py DEFAULT_READOUT_JITTER_PS=20). Same physical value at two stages. Likely double-counting. Pending Ren\u00e9/Gerardo decision.",
-  "caption_label": "intrinseco (Etapa 1): sin time-walk/ToT/SPTR. t_rel = t_foton - t_min^evento (incl. jitter 20ps por hit). Bin 2.0 ps; escala Y log. Segunda componente NO resuelta (propagacion domina en esta posicion).",
+  "caption_label": "Intrinseco (Etapa 1): t_rel = t_foton - t_min^ev. Panel izq: 0-2ns bin 2.0ps (rise/pico). Panel der: 0-10ns bin 10ps. Segunda componente NO resuelta incluso en 0-10ns.",
   "comando": "python3.12 f1_sidecar.py fig_id=fig01c",
-  "timestamp": "2026-06-15T21:49:43.473653+00:00",
-  "exec_tag": "EXEC_14"
+  "timestamp": "2026-06-16T07:00:03.032319+00:00",
+  "exec_tag": "EXEC_14",
+  "geometric_propagation_note": "AVISO FISICO: en x=690mm el muon esta en el extremo derecho del bar. SiPMs End IZQUIERDOS reciben fotones despues de recorrer ~1380mm (retardo propagacion ~5 ns a 27.7 cm/ns). La \"segunda componente\" con tau_slow~4-5 ns puede reflejar este retardo geometrico y NO necesariamente un modo lento de emision de centelleo. Para aislar el perfil de centelleo: usar solo SiPMs del extremo cercano al muon."
 }

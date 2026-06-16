@@ -81,10 +81,29 @@
     }
   },
   "escala": "scatter TH2D N_pe(ID_i) vs N_pe(ID_j); Pearson r vs separation",
-  "caption_label": "EJ-204 (EndTop) redundancia Top: correlacion N_pe entre pares. Posiciones x_gun = [-50, 0, 50] mm. IDs 49/52 (simetrico), 50/51 (adyacente gap), 47/49 (control 40mm).",
+  "caption_label": "EJ-204 (EndTop) redundancia Top: par A (49-52) ANTICORRELADOS r=-0.37 (complementarios, no redundantes); par B (50-51) r=+0.88 y par C (47-49) r=+0.89 (redundantes). Pendiente confirmacion mapa ID->X.",
   "time_convention": "time_ns = (GetGlobalTime() + G4RandGauss(0, 20ps)) / ns. t=0 is primary muon generation (Geant4 global clock). Includes: muon transit (~ps, negligible) + scintillation emission delay + optical propagation to SiPM + per-hit Gaussian jitter (20ps sigma). Verified: t_min per event at x=0 ~ 2.8 ns, consistent with 700mm / 27.7 cm/ns.",
   "jitter_per_hit_ps": 20.0,
   "comando": "python3.12 f6_sidecar.py fig_id=fig06",
   "timestamp": "2026-06-15T21:53:06.212558+00:00",
-  "exec_tag": "EXEC_14"
+  "exec_tag": "EXEC_14",
+  "interpretation_QA1b": {
+    "pair_A_49_52": {
+      "pearson_r": -0.36752523421418315,
+      "type": "ANTICORRELADOS (complementarios)",
+      "message": "ID49 (X=-32mm) y ID52 (X=+32mm) compiten por los mismos fotones (geometria especular respecto al centro). Un foton que llega al 49 no llega al 52. r=-0.37: NO son redundantes, son complementarios."
+    },
+    "pair_B_50_51": {
+      "pearson_r": 0.8805371517056524,
+      "type": "CORRELADOS (redundantes)",
+      "message": "ID50 (X=-12mm) y ID51 (X=+12mm): adyacentes al hueco central, misma posicion longitudinal, r=+0.88. Redundancia alta."
+    },
+    "pair_C_47_49": {
+      "pearson_r": 0.8949165928776266,
+      "type": "CORRELADOS (redundantes)",
+      "message": "ID47 (X=-72mm) y ID49 (X=-32mm): ambos mismo lado LEFT, separacion 40mm (2 pasos), r=+0.89. Redundancia alta."
+    },
+    "slide_message": "La redundancia real esta entre vecinos CONTIGUOS DEL MISMO LADO (ej 47<->49, r=+0.89), NO entre los simetricos respecto al centro (49<->52 son COMPLEMENTARIOS, r=-0.37). Matiza afirmacion de que 49 y 52 dan la misma info: los datos dicen lo contrario.",
+    "pending_QA2": "Verificar que par B (50<->51) no tiene cruce de indices: 50=TOP_LEFT (X=-12mm), 51=TOP_RIGHT (X=+12mm). Su r=+0.88 es razonable (misma posicion longitudinal, lados opuestos del hueco)."
+  }
 }
