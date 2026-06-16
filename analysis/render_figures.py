@@ -266,8 +266,8 @@ def render_f3(fig_id: str) -> pathlib.Path:
     ax2.legend(fontsize=6.5, markerscale=5)
 
     fig.text(0.5, 0.02,
-             f'F3 — Impactos de fotones en SiPMs (NO trazas en volumen), '
-             f'evento {meta["chosen_event_id"]} ({meta["n_hits_chosen_event"]} hits). '
+             f'F3 — Photon hits on SiPMs (NOT volume tracks), '
+             f'event {meta["chosen_event_id"]} ({meta["n_hits_chosen_event"]} hits). '
              f'{meta.get("caption_label","").split(".")[0]}.',
              ha='center', fontsize=6.5, transform=fig.transFigure)
     fig.tight_layout(rect=[0, 0.06, 1, 1])

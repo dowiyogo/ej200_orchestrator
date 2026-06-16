@@ -267,10 +267,7 @@
 % ══════════════════════════════════════════════════════════════════════════════
 \section{$\sigma_t$ vs $N_{pe}$ and Top profiles — F2, F4}
 
-\begin{frame}{F2: timing resolution vs photon yield — where more light stops helping}
-  \framesubtitle{%
-    Fit: $\sigma_t = \sqrt{a^2/N_{pe}+b^2}$ \;|\;
-    Poisson-dominated ($b\approx0$) for $N_{pe}^\text{weak}\in[11,\,77]$}
+\begin{frame}{F2: $\sigma_t$ vs $N_{pe}$ (END SiPMs) — pure Poisson, more light always helps}
   \begin{columns}[c]
     \begin{column}{0.48\textwidth}
       \centering
@@ -281,26 +278,31 @@
       \includegraphics[width=\textwidth,keepaspectratio]{fig02b.pdf}
     \end{column}
   \end{columns}
-  \vspace{0.1em}
-  {\scriptsize
-  \begin{tabular}{lccc}
-    & $a$ [ps] & $b$ [ps] & $\chi^2$/ndf \\
-    \textcolor{ej204col}{\textbf{EJ-204}} & $1312\pm24$ & $0$ & 5.22 \\
-    \textcolor{ej230col}{\textbf{EJ-230}} & $1198\pm23$ & $0$ & 5.13 \\
-  \end{tabular}
-  \;—\;
-  $N_{pe}^\text{weak}\!\in[11,77]$: Poisson-dominated.
-  Optical-path floor $b$ (F7 RMS gap) not yet visible at $N_{pe}^\text{weak}<80$.}
+  \vspace{0.05em}
+  {\tiny
+  \textbf{END SiPMs} (IDs 0–15, timing); each point = one muon position;
+  $x\!=\!N_{pe}^\text{weak}$ (far-end photons); $y\!=\!\sigma_t$ (same as F5).
+  \emph{For Top SiPM light profiles, see F4.}\\[0.1em]
+  \textcolor{ej204col}{\textbf{EJ-204}}: $a=1312\pm24$\,ps,\;$b=0$,\;$\chi^2/\text{ndf}=5.22$
+  \quad
+  \textcolor{ej230col}{\textbf{EJ-230}}: $a=1198\pm23$\,ps,\;$b=0$,\;$\chi^2/\text{ndf}=5.13$\\[0.1em]
+  \textbf{Pure Poisson} ($\sigma_t\!\propto\!1/\!\sqrt{N_{pe}}$, $b=0$):
+  no saturation in $N_{pe}^\text{weak}\!\in[11,77]$.
+  \textbf{Edge timing is limited by \emph{scarce far-end light}, not by propagation spread.
+  Adding light always improves edge timing.}\\[0.1em]
+  \textit{F2\,\&\,F7 consistent}: optical-path dispersion EXISTS (F7 RMS\,>\,floor) but
+  \emph{subdominant} to Poisson statistics in SUM4 $\sigma_t$ ($b\!\approx\!0$).}
 \end{frame}
 
-\begin{frame}{F4: $\langle N_\text{pe}\rangle$ Top profiles vs position (EJ-204 EndTop)}
+\begin{frame}{F4: Top SiPM light yield vs position — \textbf{not} a timing quantity (EndTop EJ-204)}
   \centering
-  \includegraphics[width=0.80\textwidth,keepaspectratio]{fig04.pdf}
-  \vspace{0.2em}
+  \includegraphics[width=0.74\textwidth,keepaspectratio]{fig04.pdf}
 
   \begin{itemize}
-    \item T4 and T20 \textbf{saturated at 100\%} at all positions:
-          Top never falls below 20\,PE — robust signal across the full kinematic range.
+    \item \textbf{TOP SiPMs} (IDs 16–85): Y-axis = light yield (\emph{not} timing;
+          for $\sigma_t$ see F2/F5).
+          T4 and T20 \textbf{saturated at 100\%} at all positions: Top never falls
+          below 20\,PE — robust signal across the full range.
     \item ``Nearest'' curve oscillates with the discrete \SI{20}{\mm} SiPM pitch.
     \item {\color{pendgold}\textbf{Open — Gerardo:}}
           Is T4/T20 a cut on total $N_\text{pe}$ (as implemented) or a SUM4 trigger efficiency?
@@ -421,14 +423,18 @@
         \item Band: statistical floor
               $\sigma_\text{stat}(t_n) = \sqrt{n}\,\tau_d/\langle N_\text{pe}\rangle$
       \end{itemize}
-      \vspace{0.4em}
+      \vspace{0.3em}
       \textbf{Physics:}\\
       {\footnotesize
         $\text{RMS} - \sigma_\text{floor}$ isolates
         \textbf{optical path dispersion} — the same spread that broadens $\sigma_t$
-        and shifts $v_\text{eff}^\text{onset}$ vs nominal.\\[0.3em]
+        and shifts $v_\text{eff}^\text{onset}$ vs nominal.\\[0.2em]
         At $x=-690$: cluster uses IDs 16–24
-        ($x_w=-692\to-532$\,mm) — truncated at the left edge; no channels further left.}
+        ($x_w=-692\to-532$\,mm) — truncated at the left edge; no channels further left.\\[0.3em]
+        {\tiny\textit{F7\,\&\,F2 consistent}: dispersion EXISTS here
+        (RMS\,>\,floor) but is subdominant to Poisson statistics
+        in the SUM4 $\sigma_t$ over the accessible $N_{pe}$ range
+        ($b\!\approx\!0$ in F2).}}
     \end{column}
   \end{columns}
 \end{frame}

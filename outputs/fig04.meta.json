@@ -18,7 +18,7 @@
     "T4": "media de N_pe_Top_total para eventos con N_pe_Top >= 4",
     "T20": "media de N_pe_Top_total para eventos con N_pe_Top >= 20"
   },
-  "t4_t20_note": "T4 y T20 saturadas al 100% en todas las posiciones: el Top nunca baja de 20 PE (se\u00f1al robusta). Corte no discrimina en el rango simulado. PENDIENTE CONFIRMACI\u00d3N GERARDO: \u00bfT4/T20 era corte en N_pe o eficiencia de trigger?",
+  "t4_t20_note": "T4 and T20 saturated at 100% at all positions: Top never drops below 20 PE (robust signal). Cut does not discriminate in the simulated range. OPEN GERARDO: T4/T20 is a cut on N_pe or trigger efficiency?",
   "geometry_note": "Top SiPMs: global_id 16-85 (TOP_LEFT 16-50, TOP_RIGHT 51-85). Una sola hilera en Y=+30.25mm. nearest_top_ids desde common.py (single source of truth).",
   "positions": [
     {
@@ -365,7 +365,7 @@
   ],
   "time_convention": "time_ns = (GetGlobalTime() + G4RandGauss(0, 20ps)) / ns. t=0 is primary muon generation (Geant4 global clock). Includes: muon transit (~ps, negligible) + scintillation emission delay + optical propagation to SiPM + per-hit Gaussian jitter (20ps sigma). Verified: t_min per event at x=0 ~ 2.8 ns, consistent with 700mm / 27.7 cm/ns.",
   "jitter_per_hit_ps": 20.0,
-  "caption_label": "EJ-204 (EndTop) perfiles N_pe Top vs x_gun (escala log-Y). Total: todos los SiPMs Top. Nearest: el m\u00e1s cercano al mu\u00f3n. T4/T20: solo eventos con N_pe_total >= umbral. PENDIENTE confirmaci\u00f3n Gerardo sobre definici\u00f3n T4/T20.",
+  "caption_label": "EJ-204 (EndTop) Top Npe profiles vs x_gun (log-Y). Total: all Top SiPMs. Nearest: SiPM closest to the muon. T4/T20: events with N_pe_total >= threshold. OPEN: T4/T20 definition pending Gerardo.",
   "comando": "python3.12 f4_sidecar.py fig_id=fig04",
   "timestamp": "2026-06-16T07:02:06.013182+00:00",
   "exec_tag": "EXEC_14"
