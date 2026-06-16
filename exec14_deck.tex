@@ -265,27 +265,32 @@
 \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{$N_{pe}$ threshold and Top profiles — F2, F4}
+\section{$\sigma_t$ vs $N_{pe}$ and Top profiles — F2, F4}
 
-\begin{frame}{F2: Ensemble $\sigma_t$ vs End $N_\text{pe}$ threshold}
-  \framesubtitle{Both materials saturated at 100\% — threshold \emph{does not} discriminate}
+\begin{frame}{F2: timing resolution vs photon yield — where more light stops helping}
+  \framesubtitle{%
+    Fit: $\sigma_t = \sqrt{a^2/N_{pe}+b^2}$ \;|\;
+    Poisson-dominated ($b\approx0$) for $N_{pe}^\text{weak}\in[11,\,77]$}
   \begin{columns}[c]
     \begin{column}{0.48\textwidth}
       \centering
-      \includegraphics[width=\textwidth,keepaspectratio]{fig02a.pdf}\\
-      {\footnotesize \textcolor{ej204col}{\textbf{EJ-204}}}
+      \includegraphics[width=\textwidth,keepaspectratio]{fig02a.pdf}
     \end{column}
     \begin{column}{0.48\textwidth}
       \centering
-      \includegraphics[width=\textwidth,keepaspectratio]{fig02b.pdf}\\
-      {\footnotesize \textcolor{ej230col}{\textbf{EJ-230}}}
+      \includegraphics[width=\textwidth,keepaspectratio]{fig02b.pdf}
     \end{column}
   \end{columns}
-  \vspace{0.2em}
-  {\footnotesize
-    All events pass thresholds 5--25\,PE ($N_\text{pe}^\text{End}\gg25$).
-    $\sigma\approx5$\,ns reflects \textbf{positional spread} across 31 positions,
-    not intrinsic resolution. Per-position resolution: see F5.}
+  \vspace{0.1em}
+  {\scriptsize
+  \begin{tabular}{lccc}
+    & $a$ [ps] & $b$ [ps] & $\chi^2$/ndf \\
+    \textcolor{ej204col}{\textbf{EJ-204}} & $1312\pm24$ & $0$ & 5.22 \\
+    \textcolor{ej230col}{\textbf{EJ-230}} & $1198\pm23$ & $0$ & 5.13 \\
+  \end{tabular}
+  \;—\;
+  $N_{pe}^\text{weak}\!\in[11,77]$: Poisson-dominated.
+  Optical-path floor $b$ (F7 RMS gap) not yet visible at $N_{pe}^\text{weak}<80$.}
 \end{frame}
 
 \begin{frame}{F4: $\langle N_\text{pe}\rangle$ Top profiles vs position (EJ-204 EndTop)}
