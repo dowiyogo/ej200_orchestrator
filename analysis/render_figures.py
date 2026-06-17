@@ -276,6 +276,7 @@ def render_f3(fig_id: str) -> pathlib.Path:
 # ── F4 — N_pe Top profiles ───────────────────────────────────────────────
 def render_f4(fig_id: str) -> pathlib.Path:
     meta = load_meta(fig_id)
+    mat  = meta.get('material', 'Unknown')
     rows = load_csv(fig_id)
 
     x       = np.array([float(r['x_mm'])               for r in rows])
@@ -297,7 +298,7 @@ def render_f4(fig_id: str) -> pathlib.Path:
 
     ax.set(yscale='log', xlabel='$x_{gun}$ [mm]',
            ylabel=r'$\langle N_{pe} \rangle$ Top',
-           title='F4 — $N_{pe}$ Top profiles vs position (EndTop EJ-204, log-Y)')
+           title=f'F4 — $N_{{pe}}$ Top profiles vs position (EndTop {mat}, log-Y)')
     ax.legend(fontsize=7.5)
     ax.text(0.02, 0.97, f'T4 saturated: {meta.get("T4_saturated_100pct")}\n'
             f'T20 saturated: {meta.get("T20_saturated_100pct")}\n'
@@ -370,6 +371,7 @@ def render_f5(fig_id: str) -> pathlib.Path:
 # ── F6 — Top redundancy ──────────────────────────────────────────────────
 def render_f6(fig_id: str) -> pathlib.Path:
     meta   = load_meta(fig_id)
+    mat    = meta.get('material', 'Unknown')
     pairs  = meta.get('pairs', [])
 
     with uproot.open(str(OUTPUTS / f'{fig_id}.root')) as f:
@@ -416,10 +418,17 @@ def render_f6(fig_id: str) -> pathlib.Path:
         ax.set(xlabel=f'$N_{{pe}}$ ID {id1}', ylabel=f'$N_{{pe}}$ ID {id2}',
                title=f'Pair {chr(65+pairs.index(p))}: {lbl}\n(sep={sep} mm)')
 
-    fig.suptitle('F6 — Top SiPM redundancy: N_pe correlation between neighbouring pairs\n'
-                 'Pair A (49/52, symmetric): r=−0.37 complementary  |  '
-                 'Pair B (50/51): r=+0.88  |  Pair C (47/49, same side): r=+0.89 redundant',
-                 fontsize=9, y=1.01)
+    def _rfmt(p, key='pearson_r_both_gt0'):
+        v = p.get(key, float('nan'))
+        return f'{v:+.2f}' if v == v else 'N/A'
+    ra = _rfmt(pairs[0]) if len(pairs) > 0 else '?'
+    rb = _rfmt(pairs[1]) if len(pairs) > 1 else '?'
+    rc = _rfmt(pairs[2]) if len(pairs) > 2 else '?'
+    fig.suptitle(
+        f'F6 ({mat}) — Top SiPM redundancy: $N_{{pe}}$ correlation between neighbouring pairs\n'
+        f'Pair A (49/52, symmetric): $r={ra}$ complementary  |  '
+        f'Pair B (50/51): $r={rb}$  |  Pair C (47/49, same side): $r={rc}$ redundant',
+        fontsize=9, y=1.01)
     fig.tight_layout()
     return _save(fig, fig_id)
 

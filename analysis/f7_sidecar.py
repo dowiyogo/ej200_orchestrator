@@ -68,13 +68,13 @@ def _sha256(path: pathlib.Path) -> str:
 
 # ── Per-position computation ──────────────────────────────────────────────────
 
-def _compute_position(x_mm: int) -> dict:
+def _compute_position(x_mm: int, *, data_dir: pathlib.Path, tau_d_ns: float) -> dict:
     """Return per-channel stats for the 9 nearest Top channels at x_mm."""
-    root_path = _c.expected_file(DATA_DIR, x_mm)
+    root_path = _c.expected_file(data_dir, x_mm)
     if not root_path.exists():
         raise FileNotFoundError(f"EndTop ROOT not found: {root_path}")
 
-    event_id, global_id, time_ns = _e12b._load_arrays(DATA_DIR, x_mm)
+    event_id, global_id, time_ns = _e12b._load_arrays(data_dir, x_mm)
     ch_ids = _e12b._top_9_neighbors(x_mm)
     top_pos = list(_c.TOP_POSITIONS_MM)
 
@@ -83,7 +83,7 @@ def _compute_position(x_mm: int) -> dict:
         ns, means, rmss, mean_npe = _e12b._per_channel_stats(
             event_id, global_id, time_ns, ch_id
         )
-        floor = _e12b._stat_floor(ns, mean_npe)
+        floor = [float(np.sqrt(n)) * tau_d_ns / mean_npe for n in ns]
         channels.append(
             dict(
                 ch_id=ch_id,
@@ -152,7 +152,9 @@ def _write_root(data: list[dict], out_path: pathlib.Path) -> None:
 
 # ── Matplotlib figure (3×3 grid per position) ────────────────────────────────
 
-def _make_figure(pos_data: dict, out_pdf: pathlib.Path) -> None:
+def _make_figure(
+    pos_data: dict, out_pdf: pathlib.Path, *, material: str, tau_d_ns: float
+) -> None:
     x_mm = pos_data["x_mm"]
     channels = pos_data["channels"]
     n_ch = len(channels)      # 9
@@ -163,10 +165,10 @@ def _make_figure(pos_data: dict, out_pdf: pathlib.Path) -> None:
                         left=0.07, right=0.98, top=0.88, bottom=0.08)
     fig.suptitle(
         f"F7 — Order-statistic arrival time $\\langle t_n\\rangle$ per Top channel"
-        f"  |  $x_\\mathrm{{gun}}={x_mm:+d}$ mm (EJ-204 EndTop)\n"
+        f"  |  $x_\\mathrm{{gun}}={x_mm:+d}$ mm ({material} EndTop)\n"
         r"Error bars = RMS (event-to-event). "
         r"Dashed band: stat.\ floor $\sqrt{n}\,\tau_d/\langle N_{pe}\rangle$, "
-        r"$\tau_d=1.8$\,ns",
+        f"$\\tau_d={tau_d_ns}$\\,ns",
         fontsize=8, y=0.97,
     )
 
@@ -246,15 +248,26 @@ def _write_csv(data: list[dict], out_path: pathlib.Path) -> None:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-def generate_f7_sidecar() -> None:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    stem = OUTPUT_DIR / FIG_ID
+def generate_f7_sidecar(
+    *,
+    fig_id: str,
+    material: str,
+    dataset: str,
+    data_dir: pathlib.Path,
+    output_dir: pathlib.Path,
+    tau_d_ns: float,
+    positions: tuple[int, ...],
+    sha256_inputs: dict[int, str],
+    exec_tag: str = "EXEC_14",
+) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    stem = output_dir / fig_id
 
-    print(f"[{FIG_ID}] Computing order-statistic arrival times …")
+    print(f"[{fig_id}] Computing order-statistic arrival times …")
     all_data: list[dict] = []
-    for x_mm in POSITIONS:
+    for x_mm in positions:
         print(f"  x = {x_mm:+d} mm")
-        pos_data = _compute_position(x_mm)
+        pos_data = _compute_position(x_mm, data_dir=data_dir, tau_d_ns=tau_d_ns)
         all_data.append(pos_data)
 
     # ── ROOT ──────────────────────────────────────────────────────────────────
@@ -262,83 +275,102 @@ def generate_f7_sidecar() -> None:
     if root_out.exists():
         root_out.unlink()
     _write_root(all_data, root_out)
-    print(f"[{FIG_ID}] ROOT → {root_out.name} ({root_out.stat().st_size/1024:.1f} kB)")
+    print(f"[{fig_id}] ROOT → {root_out.name} ({root_out.stat().st_size/1024:.1f} kB)")
 
     # ── CSV ───────────────────────────────────────────────────────────────────
     csv_out = stem.with_suffix(".csv")
     _write_csv(all_data, csv_out)
-    print(f"[{FIG_ID}] CSV  → {csv_out.name}")
+    print(f"[{fig_id}] CSV  → {csv_out.name}")
 
     # ── Figures ───────────────────────────────────────────────────────────────
-    primary = next(d for d in all_data if d["x_mm"] == -690)
-    control = next(d for d in all_data if d["x_mm"] == 0)
-
-    _make_figure(primary, stem.with_suffix(".pdf"))           # main beamer figure
-    _make_figure(control, stem.parent / f"{FIG_ID}_x0.pdf")  # control (reference)
+    primary_pos = positions[0]
+    primary = next(d for d in all_data if d["x_mm"] == primary_pos)
+    _make_figure(primary, stem.with_suffix(".pdf"), material=material, tau_d_ns=tau_d_ns)
+    for pd in all_data[1:]:
+        x_tag = f"xp{pd['x_mm']}" if pd["x_mm"] >= 0 else f"xm{abs(pd['x_mm'])}"
+        _make_figure(
+            pd,
+            output_dir / f"{fig_id}_{x_tag}.pdf",
+            material=material,
+            tau_d_ns=tau_d_ns,
+        )
 
     # ── meta.json ─────────────────────────────────────────────────────────────
     top_pos = list(_c.TOP_POSITIONS_MM)
-    ids_690 = _e12b._top_9_neighbors(-690)
-    ids_0   = _e12b._top_9_neighbors(0)
+    ids_primary = _e12b._top_9_neighbors(primary_pos)
     sha_by_x = {d["x_mm"]: d["sha"] for d in all_data}
 
+    channels_by_pos: dict[str, dict] = {}
+    for x_mm in positions:
+        ids = _e12b._top_9_neighbors(x_mm)
+        key = f"channels_x{'m' if x_mm < 0 else 'p'}{abs(x_mm)}"
+        entry: dict = {
+            "ch_ids": ids,
+            "ch_positions_mm": [top_pos[i - 16] for i in ids],
+        }
+        if x_mm == positions[0]:
+            entry["truncation_note"] = (
+                f"At x={x_mm:+d} mm: nearest_idx=0, cluster cannot extend left. "
+                "Shifted to 9 leftmost Top channels (IDs 16-24, "
+                "x_w=-692...-532 mm). This is expected edge behaviour."
+            )
+        channels_by_pos[key] = entry
+
     meta = {
-        "fig_id": FIG_ID,
+        "fig_id": fig_id,
         "figura": "F7",
-        "material": "EJ-204",
-        "dataset": "exec07_endtop_2000",
+        "material": material,
+        "dataset": dataset,
         "description": (
             "Order-statistic arrival time <t_n> per Top channel. "
             "9 nearest Top channels (nearest±4 by position index). "
             "Gap between RMS and stat floor isolates optical path dispersion."
         ),
-        "positions_analyzed": list(POSITIONS),
+        "positions_analyzed": list(positions),
         "n_max": _N_MAX,
         "min_entries_per_point": _e12b.MIN_ENTRIES,
-        "tau_d_ns": float(_c.TAU_D_NS),
+        "tau_d_ns": tau_d_ns,
         "stat_floor_formula": "sigma_stat(t_n) = sqrt(n) * tau_d / mean_Npe",
-        "channels_x_neg690": {
-            "ch_ids": ids_690,
-            "ch_positions_mm": [top_pos[i - 16] for i in ids_690],
-            "truncation_note": (
-                "At x=-690 mm: nearest_idx=0, cluster cannot extend left. "
-                "Shifted to 9 leftmost Top channels (IDs 16-24, "
-                "x_w=-692...-532 mm). This is expected edge behaviour."
-            ),
-        },
-        "channels_x0": {
-            "ch_ids": ids_0,
-            "ch_positions_mm": [top_pos[i - 16] for i in ids_0],
-        },
+        **channels_by_pos,
         "physics_note": (
-            "The statistical floor sqrt(n)*tau_d/<Npe> is the irreducible "
-            "order-statistics limit for pure exponential emission (tau_d=1.8 ns). "
+            f"The statistical floor sqrt(n)*tau_d/<Npe> is the irreducible "
+            f"order-statistics limit for pure exponential emission (tau_d={tau_d_ns} ns). "
             "Observed RMS > floor: the excess is optical path length dispersion "
             "(same effect that broadens sigma_t toward edges and shifts v_eff onset "
             "vs nominal). tau_d here is the EMISSION constant (datasheet), "
             "not the fitted arrival-profile tau_f."
         ),
         "sha256_inputs": {
-            f"x{x_mm:+d}mm": sha_by_x[x_mm]
-            for x_mm in POSITIONS
+            f"x{x_mm:+d}mm": sha256_inputs.get(x_mm, sha_by_x.get(x_mm, ""))
+            for x_mm in positions
         },
         "escala": "linear Y, linear X (n photon index)",
         "caption_label": (
-            "F7 (EJ-204 EndTop): mean arrival time of the n-th photon per Top channel. "
+            f"F7 ({material} EndTop): mean arrival time of the n-th photon per Top channel. "
             "Error bars = RMS. Dashed band = statistical floor sqrt(n)*tau_d/<Npe>. "
             "Gap between RMS and floor = optical path dispersion. "
-            "Primary position x=-690 mm (truncated cluster at left edge, IDs 16-24)."
+            f"Primary position x={primary_pos:+d} mm (truncated cluster at left edge, IDs 16-24)."
         ),
-        "comando": "python3.12 f7_sidecar.py",
+        "comando": f"python3.12 f7_sidecar.py (fig_id={fig_id})",
         "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
-        "exec_tag": "EXEC_14",
+        "exec_tag": exec_tag,
         "source_logic": "exec12b_tn_dispersion.py (read-only import; not duplicated)",
     }
     json_out = stem.with_suffix(".meta.json")
     json_out.write_text(json.dumps(meta, indent=2))
-    print(f"[{FIG_ID}] meta → {json_out.name}")
-    print(f"[{FIG_ID}] Done.")
+    print(f"[{fig_id}] meta → {json_out.name}")
+    print(f"[{fig_id}] Done.")
 
 
 if __name__ == "__main__":
-    generate_f7_sidecar()
+    generate_f7_sidecar(
+        fig_id="fig07",
+        material="EJ-204",
+        dataset="exec07_endtop_2000",
+        data_dir=pathlib.Path("/home/reriosto/SHiP/t0minidaq/sslg4/exec07_endtop_2000"),
+        output_dir=pathlib.Path("/home/reriosto/SHiP/orchestrator/outputs"),
+        tau_d_ns=float(_c.TAU_D_NS),
+        positions=(-690, 0),
+        sha256_inputs={},
+        exec_tag="EXEC_14",
+    )

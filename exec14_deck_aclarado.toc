@@ -3,7 +3,7 @@
 \beamer@sectionintoc {3}{Geometric time-of-flight — QA-1c}{6}{0}{3}
 \beamer@sectionintoc {4}{Spatial hit distribution — F3}{8}{0}{4}
 \beamer@sectionintoc {5}{$\sigma _t$ vs $N_{pe}$ and Top profiles — F2, F4}{9}{0}{5}
-\beamer@sectionintoc {6}{Timing resolution SUM4 — F5}{11}{0}{6}
-\beamer@sectionintoc {7}{Top SiPM redundancy — F6}{14}{0}{7}
-\beamer@sectionintoc {8}{Optical path dispersion — F7}{15}{0}{8}
-\beamer@sectionintoc {9}{Summary}{16}{0}{9}
+\beamer@sectionintoc {6}{Timing resolution SUM4 — F5}{12}{0}{6}
+\beamer@sectionintoc {7}{Top SiPM redundancy — F6}{15}{0}{7}
+\beamer@sectionintoc {8}{Optical path dispersion — F7}{17}{0}{8}
+\beamer@sectionintoc {9}{Summary}{19}{0}{9}

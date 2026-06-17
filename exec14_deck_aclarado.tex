@@ -329,6 +329,23 @@
   \end{itemize}}
 \end{frame}
 
+\begin{frame}{F4: Top SiPM light yield vs position — \textbf{not} a timing quantity (\textcolor{ej230col}{EJ-230})}
+  \centering
+  \includegraphics[width=0.59\textwidth,keepaspectratio]{fig04_ej230.pdf}
+
+  \vspace{-0.3em}
+  {\scriptsize
+  \begin{itemize}\setlength\itemsep{0.05em}
+    \item \textbf{EJ-230 EndTop} (opsc-106, $\tau_d=1.5$\,ns).
+      T4/T20 cut efficiencies remain 100\% across all positions,
+      identical behaviour to EJ-204 (previous slide).
+    \item Total yield is 5--10\% lower than EJ-204 at the same position,
+      consistent with EJ-230's lower scintillation yield (9\,700 vs 10\,000 photons/MeV).
+    \item {\color{pendgold}\textbf{Open — Gerardo:}}
+      confirm whether T4/T20 are total-$N_{pe}$ cuts or a SUM4 trigger efficiency.
+  \end{itemize}}
+\end{frame}
+
 % ══════════════════════════════════════════════════════════════════════════════
 \section{Timing resolution SUM4 — F5}
 
@@ -442,6 +459,41 @@
   \end{center}
 \end{frame}
 
+\input{outputs/fig06_ej230_macros}
+\begin{frame}{F6: Top SiPM redundancy — $N_\text{pe}$ correlation (\textcolor{ej230col}{EJ-230})}
+  \centering
+  \includegraphics[width=0.78\textwidth,keepaspectratio]{fig06_ej230.pdf}
+
+  \vspace{-0.15em}
+  {\footnotesize\begin{columns}[T]
+    \begin{column}{0.32\textwidth}
+      \centering
+      \textbf{Pair A (IDs 49/52)}\\
+      sep $=64$\,mm, opposite sides\\
+      $r=\FseisrParA$ — complementary\\
+      {\footnotesize (light splits between sides)}
+    \end{column}
+    \begin{column}{0.32\textwidth}
+      \centering
+      \textbf{Pair B (IDs 50/51)}\\
+      sep $=24$\,mm, across gap\\
+      $r=\FseisrParB$ — \textbf{strongly correlated}\\
+      {\footnotesize (same light source)}
+    \end{column}
+    \begin{column}{0.32\textwidth}
+      \centering
+      \textbf{Pair C (IDs 47/49)}\\
+      sep $=40$\,mm, same side\\
+      $r=\FseisrParC$ — \textbf{strongly correlated control}\\
+      {\footnotesize (local correlation expected)}
+    \end{column}
+  \end{columns}}
+  \vspace{-0.1em}
+  \begin{center}
+    {\tiny EJ-230 correlations consistent with EJ-204: topology is geometry-driven, not material-dependent.}
+  \end{center}
+\end{frame}
+
 % ══════════════════════════════════════════════════════════════════════════════
 \section{Optical path dispersion — F7}
 
@@ -472,6 +524,32 @@
       \]
       IDs 16--24 span $x_w=-692\to-532$\,mm and are truncated by the left edge.
       The connection to F2 is qualitative: F7 uses TOP channels, whereas F2 uses END timing.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\input{outputs/fig07_ej230_macros}
+\begin{frame}{F7: Order-statistic $\langle t_n\rangle$ per Top channel —
+              \textcolor{ej230col}{EJ-230}, $x=-690$\,mm}
+  \framesubtitle{Statistical floor uses $\tau_d=\FsietatauD$\,ns (EJ-230, opsc-106); floor is lower than EJ-204}
+  \begin{columns}[c]
+    \begin{column}{0.59\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,keepaspectratio]{fig07_ej230.pdf}
+    \end{column}
+    \begin{column}{0.39\textwidth}
+      \textbf{EJ-230 vs EJ-204:}
+      \begin{itemize}\setlength\itemsep{0.15em}
+        \item Floor lower: $\tau_d=\FsietatauD$\,ns vs $1.8$\,ns (EJ-204)
+              $\Rightarrow$ faster photon emission narrows the pure-statistics limit.
+        \item Observed $t_n$ RMS at low $n$ still exceeds the floor:
+              same qualitative signature of optical-path dispersion as EJ-204.
+        \item Dashed band: $\sigma_\text{stat}(t_n)\simeq\sqrt{n}\,\tau_d/\langle N_\text{pe}\rangle$,
+              $\tau_d=\FsietatauD$\,ns.
+      \end{itemize}
+      \vspace{0.1em}
+      {\footnotesize IDs 16--24 span $x_w=-692\to-532$\,mm
+      (truncated left-edge cluster, same as EJ-204 F7).}
     \end{column}
   \end{columns}
 \end{frame}
