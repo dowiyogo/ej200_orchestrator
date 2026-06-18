@@ -1,0 +1,14 @@
+Internal ctest changing into directory: /tmp/ship-final-remote-build/fix_readout-wrapping-config
+Test project /tmp/ship-final-remote-build/fix_readout-wrapping-config
+    Start 1: smoke_test
+1/4 Test #1: smoke_test .......................   Passed    2.55 sec
+    Start 2: edge_scan_smoke
+2/4 Test #2: edge_scan_smoke ..................   Passed  177.19 sec
+    Start 3: physics_baseline_check
+3/4 Test #3: physics_baseline_check ...........   Passed    0.07 sec
+    Start 4: readout_config_check
+4/4 Test #4: readout_config_check .............   Passed    0.07 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) = 179.89 sec

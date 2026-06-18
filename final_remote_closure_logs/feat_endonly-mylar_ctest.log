@@ -1,0 +1,28 @@
+Internal ctest changing into directory: /tmp/ship-final-remote-build/feat_endonly-mylar
+Test project /tmp/ship-final-remote-build/feat_endonly-mylar
+      Start  1: smoke_test
+ 1/11 Test  #1: smoke_test .......................   Passed    1.89 sec
+      Start  2: edge_scan_smoke
+ 2/11 Test  #2: edge_scan_smoke ..................   Passed    1.87 sec
+      Start  3: sslg4_properties_check
+ 3/11 Test  #3: sslg4_properties_check ...........   Passed    0.54 sec
+      Start  4: readout_config_check
+ 4/11 Test  #4: readout_config_check .............   Passed    0.68 sec
+      Start  5: export_endtop_gdml
+ 5/11 Test  #5: export_endtop_gdml ...............   Passed    0.58 sec
+      Start  6: endtop_gdml_check
+ 6/11 Test  #6: endtop_gdml_check ................   Passed    0.77 sec
+      Start  7: endtop_balance_smoke
+ 7/11 Test  #7: endtop_balance_smoke .............   Passed   23.49 sec
+      Start  8: endonly_no_top_channels
+ 8/11 Test  #8: endonly_no_top_channels ..........   Passed    0.41 sec
+      Start  9: endonly_photon_budget_guard
+ 9/11 Test  #9: endonly_photon_budget_guard ......   Passed    7.20 sec
+      Start 10: physical_ordering_guard
+10/11 Test #10: physical_ordering_guard ..........   Passed    0.29 sec
+      Start 11: anti_artifact_parity_guard
+11/11 Test #11: anti_artifact_parity_guard .......   Passed   25.18 sec
+
+100% tests passed, 0 tests failed out of 11
+
+Total Test time (real) =  63.13 sec

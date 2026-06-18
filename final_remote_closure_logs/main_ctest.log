@@ -1,0 +1,10 @@
+Internal ctest changing into directory: /tmp/ship-final-remote-build/main
+Test project /tmp/ship-final-remote-build/main
+    Start 1: smoke_test
+1/2 Test #1: smoke_test .......................   Passed    2.24 sec
+    Start 2: edge_scan_smoke
+2/2 Test #2: edge_scan_smoke ..................   Passed  169.94 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) = 172.21 sec

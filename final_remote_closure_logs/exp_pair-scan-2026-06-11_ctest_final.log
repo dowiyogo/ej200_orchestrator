@@ -1,0 +1,24 @@
+Internal ctest changing into directory: /tmp/ship-final-remote-build/exp_pair-scan-2026-06-11
+Test project /tmp/ship-final-remote-build/exp_pair-scan-2026-06-11
+    Start 1: smoke_test
+1/9 Test #1: smoke_test .......................   Passed    1.54 sec
+    Start 2: edge_scan_smoke
+2/9 Test #2: edge_scan_smoke ..................   Passed    1.34 sec
+    Start 3: sslg4_properties_check
+3/9 Test #3: sslg4_properties_check ...........   Passed    0.09 sec
+    Start 4: readout_config_check
+4/9 Test #4: readout_config_check .............   Passed    0.09 sec
+    Start 5: export_endtop_gdml
+5/9 Test #5: export_endtop_gdml ...............   Passed    0.09 sec
+    Start 6: endtop_gdml_check
+6/9 Test #6: endtop_gdml_check ................   Passed    0.05 sec
+    Start 7: endtop_balance_smoke
+7/9 Test #7: endtop_balance_smoke .............   Passed    2.66 sec
+    Start 8: pairscan_geometry_check
+8/9 Test #8: pairscan_geometry_check ..........   Passed    0.05 sec
+    Start 9: pairscan_macros_check
+9/9 Test #9: pairscan_macros_check ............   Passed    0.05 sec
+
+100% tests passed, 0 tests failed out of 9
+
+Total Test time (real) =   6.00 sec

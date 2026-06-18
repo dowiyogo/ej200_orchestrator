@@ -1,0 +1,26 @@
+Internal ctest changing into directory: /tmp/ship-final-remote-build/feat_endtop-sslg4
+Test project /tmp/ship-final-remote-build/feat_endtop-sslg4
+    Start 1: smoke_test
+1/7 Test #1: smoke_test .......................   Passed    2.34 sec
+    Start 2: edge_scan_smoke
+2/7 Test #2: edge_scan_smoke ..................   Passed    3.12 sec
+    Start 3: sslg4_properties_check
+3/7 Test #3: sslg4_properties_check ...........   Passed    0.57 sec
+    Start 4: readout_config_check
+4/7 Test #4: readout_config_check .............   Passed    0.61 sec
+    Start 5: export_endtop_gdml
+5/7 Test #5: export_endtop_gdml ...............   Passed    0.68 sec
+    Start 6: endtop_gdml_check
+6/7 Test #6: endtop_gdml_check ................   Passed    0.38 sec
+    Start 7: endtop_balance_smoke
+7/7 Test #7: endtop_balance_smoke .............***Failed   11.01 sec
+wrapped-face escape fraction 1.023 is compatible with an open face
+
+
+86% tests passed, 1 tests failed out of 7
+
+Total Test time (real) =  18.91 sec
+
+The following tests FAILED:
+	  7 - endtop_balance_smoke (Failed)
+Errors while running CTest
