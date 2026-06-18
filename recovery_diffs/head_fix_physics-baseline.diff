@@ -1,0 +1,708 @@
+commit d74816eac6a9f6eb20c288ad52c4da6c3e3ed882
+Author: dowiyogo <dowiyogo@gmail.com>
+Date:   Thu Jun 18 08:37:01 2026 +0200
+
+    fix(optics): replace reflector volumes with bar skin surface
+    
+    Remove thin air-filled reflector sibling volumes that caused
+    post-reflection optical-photon steps in the scintillator to be timed
+    with the air group velocity.
+    
+    Apply the existing branch-specific reflector optical properties as a
+    G4LogicalSkinSurface on the scintillator logical volume while
+    preserving explicit bar-to-SiPM border surfaces.
+    
+    This prevents reflector-volume touchable aliasing in G4Transportation
+    and keeps post-bounce timing at the scintillator GROUPVEL.
+    
+    (cherry picked from commit f39b84cb1396c66bf70897aefb10d16675fba11d)
+
+diff --git a/include/DetectorConstruction.hh b/include/DetectorConstruction.hh
+index a48b15e..9fb5b4e 100644
+--- a/include/DetectorConstruction.hh
++++ b/include/DetectorConstruction.hh
+@@ -18,12 +18,20 @@ class G4GenericMessenger;
+ //     ├─ BarPV (selectable EJ-204/EJ-200/EJ-230; default EJ-204)
+ //     │   ├─ EndSiPMLeft_PV  × 8   (global IDs  0– 7)
+ //     │   ├─ EndSiPMRight_PV × 8   (global IDs  8–15)
++<<<<<<< HEAD
+ //     │   └─ TopSiPMPV       × N   (global IDs 16…15+N)
+ //     └─ Reflector*PV panels (optical border surfaces, R=0.98)
+ //
+ // The Mylar wrap volume was removed in fix/geometry-bar-in-world.
+ // Optical reflection is now handled by explicit reflector panels on the
+ // non-SiPM faces; SiPMs are BarLV daughters with BarPV→SiPM border surfaces.
++=======
++//     │   └─ TopSiPMPV       × 70  (global IDs 16–85)
++//     └─ Reflector optical properties on BarLV (G4LogicalSkinSurface)
++//
++// Reflector optical properties are applied as a skin on BarLV.
++// SiPM coupling volumes are BarLV daughters with explicit BarPV->SiPM border surfaces.
++>>>>>>> f39b84c (fix(optics): replace reflector volumes with bar skin surface)
+ //
+ // N (number of top SiPMs) is computed from the configurable pitch so that all
+ // SiPMs remain inside the bar footprint.  Default pitch = 70 mm → N = 20.
+@@ -33,7 +41,7 @@ class G4GenericMessenger;
+ //   /det/scintillatorMaterial EJ204|EJ200|EJ230
+ //   /det/edgeWrap mylar|air|black  — accepted for legacy macros; no-op
+ //
+-// Border surfaces: BarPV → each SiPM physical volume; BarPV → reflector panels.
++// Border surfaces: BarPV → each SiPM physical volume.
+ // --------------------------------------------------------------------------
+ class DetectorConstruction : public G4VUserDetectorConstruction {
+   public:
+diff --git a/src/DetectorConstruction.cc b/src/DetectorConstruction.cc
+index fa61d85..82121a7 100644
+--- a/src/DetectorConstruction.cc
++++ b/src/DetectorConstruction.cc
+@@ -1,5 +1,7 @@
+ #include "DetectorConstruction.hh"
+ #include "Materials.hh"
++#include "OrganicScintillatorFactory.hh"
++#include "SiPMModel.hh"
+ #include "SiPMSD.hh"
+ 
+ #include "G4Box.hh"
+@@ -11,13 +13,16 @@
+ #include "G4RunManager.hh"
+ #include "G4SDManager.hh"
+ #include "G4StateManager.hh"
++#include "G4SubtractionSolid.hh"
+ #include "G4SystemOfUnits.hh"
++#include "G4VSolid.hh"
+ #include "G4VisAttributes.hh"
+ #include "G4MaterialPropertiesTable.hh"
+ #include "G4ios.hh"
+ 
+ #include <algorithm>
+ #include <cctype>
++#include <cmath>
+ #include <string>
+ 
+ // ── Geometry constants ────────────────────────────────────────────────────────
+@@ -37,25 +42,10 @@ static constexpr G4double kTopHalfY   = 0.25 * mm;  // thickness
+ static constexpr G4double kTopHalfZ   = 3.0  * mm;  // 6 mm in Z
+ 
+ // ── Static helpers ────────────────────────────────────────────────────────────
+-
+-// Maximum X available for SiPM centres (must stay inside bar footprint)
+-static constexpr G4double kTopSiPMMaxX = kBarHalfX - kTopHalfX;  // 697 mm
+-
+-G4int DetectorConstruction::ComputeNTopSiPMs(G4double pitch) {
+-    // Number of SiPMs that can be placed symmetrically within ±kTopSiPMMaxX
+-    // at the requested pitch.  Always returns an even number ≥ 2.
+-    if (pitch <= 0.0) return 2;
+-    G4int n = static_cast<G4int>(std::floor(2.0 * kTopSiPMMaxX / pitch)) + 1;
+-    if (n < 2)        n = 2;
+-    if (n % 2 != 0)   n -= 1;   // enforce symmetry (even count)
+-    return n;
+-}
+-
+-// X-centre of top SiPM index idx (0-based) given nTotal SiPMs at pitch
+-G4double DetectorConstruction::TopSiPMCenterX(G4int idx, G4double pitch,
+-                                               G4int nTotal) {
+-    // Symmetric distribution: centres at (idx - (nTotal-1)/2) * pitch
+-    return (idx - 0.5 * (nTotal - 1)) * pitch;
++G4double DetectorConstruction::TopSiPMCenterX(G4int idx) {
++    if (idx < 0 || idx >= kNTopSiPMs) return 0.0;
++    if (idx < 35) return (-692.0 + 20.0 * idx) * mm;
++    return (12.0 + 20.0 * (idx - 35)) * mm;
+ }
+ 
+ G4int DetectorConstruction::FaceType(G4int globalId) {
+@@ -72,69 +62,114 @@ G4int DetectorConstruction::LocalId(G4int globalId) {
+ 
+ // ── Constructor / Destructor ──────────────────────────────────────────────────
+ DetectorConstruction::DetectorConstruction() {
+-    fNTopSiPMs = ComputeNTopSiPMs(fTopSiPMPitch);
+-
+     // UI messenger — available after construction, before /run/initialize
+     fMessenger = new G4GenericMessenger(this, "/det/", "Detector geometry control");
+ 
+-    auto& cmd = fMessenger->DeclareMethodWithUnit(
+-        "topSiPMPitch", "mm",
+-        &DetectorConstruction::SetTopSiPMPitch,
+-        "Set distance between adjacent top SiPMs [mm]. Triggers geometry rebuild.\n"
+-        "  Valid range: ~10 mm … 73 mm (limited by bar length and SiPM count).\n"
+-        "  Common values: 40 (4 cm), 50 (5 cm), 70 (7 cm, default).");
+-    cmd.SetParameterName("pitch", false);
+-    cmd.SetRange("pitch > 0");
+-
+     auto& matCmd = fMessenger->DeclareMethod(
++        "scintillator",
++        &DetectorConstruction::SetScintillatorCode,
++        "Set SSLG4 organic scintillator: OPSC-101 (EJ-204, default) or OPSC-100 (EJ-200).");
++    matCmd.SetParameterName("code", false);
++
++    auto& legacyMatCmd = fMessenger->DeclareMethod(
+         "scintillatorMaterial",
+-        &DetectorConstruction::SetScintillatorMaterial,
+-        "Set active scintillator: EJ204 (default), EJ200, or EJ230.");
+-    matCmd.SetParameterName("material", false);
++        &DetectorConstruction::SetScintillatorCode,
++        "Legacy alias for /det/scintillator.");
++    legacyMatCmd.SetParameterName("code", false);
++
++    auto& readoutCmd = fMessenger->DeclareMethod(
++        "readout",
++        &DetectorConstruction::SetReadoutConfiguration,
++        "Set readout/wrapping configuration: End (default), Top, or EndTop.");
++    readoutCmd.SetParameterName("configuration", false);
+ 
+     fMessenger->DeclareMethod(
+         "edgeWrap",
+         &DetectorConstruction::SetEdgeWrapMode,
+         "Legacy no-op. The Mylar wrap volume was removed; reflection is handled\n"
+         "by explicit reflector panels around BarLV.");
++
++    fSiPMMessenger = new G4GenericMessenger(this, "/sipm/", "SiPM model control");
++    auto& sipmModelCmd = fSiPMMessenger->DeclareMethod(
++        "model", &DetectorConstruction::SetSiPMModel,
++        "Set SiPM model. Default and currently supported: AFBR-S4N66P024M.");
++    sipmModelCmd.SetParameterName("model", false);
+ }
+ 
+ DetectorConstruction::~DetectorConstruction() {
++    delete fSiPMMessenger;
+     delete fMessenger;
+ }
+ 
+-// ── SetTopSiPMPitch ───────────────────────────────────────────────────────────
+-void DetectorConstruction::SetTopSiPMPitch(G4double pitchMm) {
+-    // pitchMm is already in G4 internal units (mm=1) because DeclareMethodWithUnit
+-    // performs the conversion before calling this function.
+-    fTopSiPMPitch = pitchMm;
+-    fNTopSiPMs    = ComputeNTopSiPMs(fTopSiPMPitch);
++void DetectorConstruction::SetScintillatorCode(G4String code) {
++    std::transform(code.begin(), code.end(), code.begin(),
++                   [](unsigned char ch) { return static_cast<char>(std::toupper(ch)); });
++    code.erase(std::remove_if(code.begin(), code.end(),
++                              [](unsigned char ch) { return ch == '_' || ch == ' '; }),
++               code.end());
++    if (code == "EJ204") code = "OPSC-101";
++    if (code == "EJ200") code = "OPSC-100";
++
++    if (code != "OPSC-101" && code != "OPSC-100") {
++        G4cerr << "[DetectorConstruction] Unknown /det/scintillator \""
++               << code << "\". Use OPSC-101 or OPSC-100.\n";
++        return;
++    }
++    if (code == fScintCode) return;
++
++    fScintCode = code;
+     if (G4StateManager::GetStateManager()->GetCurrentState() != G4State_PreInit) {
+         G4RunManager::GetRunManager()->ReinitializeGeometry();
+     }
+ }
+ 
+-void DetectorConstruction::SetScintillatorMaterial(G4String materialName) {
+-    std::transform(materialName.begin(), materialName.end(), materialName.begin(),
++void DetectorConstruction::SetSiPMModel(G4String model) {
++    const G4String canonical = SiPMModel::CanonicalName(model);
++    if (canonical.empty()) {
++        G4cerr << "[DetectorConstruction] Unknown /sipm/model \"" << model
++               << "\". Use AFBR-S4N66P024M.\n";
++        return;
++    }
++    if (canonical == fSiPMModel) return;
++    fSiPMModel = canonical;
++    if (G4StateManager::GetStateManager()->GetCurrentState() != G4State_PreInit) {
++        G4RunManager::GetRunManager()->ReinitializeGeometry();
++    }
++}
++
++void DetectorConstruction::SetReadoutConfiguration(G4String configuration) {
++    std::transform(configuration.begin(), configuration.end(), configuration.begin(),
+                    [](unsigned char ch) { return static_cast<char>(std::toupper(ch)); });
+-    materialName.erase(
+-        std::remove_if(materialName.begin(), materialName.end(),
++    configuration.erase(
++        std::remove_if(configuration.begin(), configuration.end(),
+                        [](unsigned char ch) { return ch == '-' || ch == '_' || ch == ' '; }),
+-        materialName.end());
+-
+-    if (materialName != "EJ204" && materialName != "EJ200" && materialName != "EJ230") {
+-        G4cerr << "[DetectorConstruction] Unknown /det/scintillatorMaterial \""
+-               << materialName << "\". Use EJ204, EJ200, or EJ230.\n";
++        configuration.end());
++
++    G4String canonical;
++    if (configuration == "END") canonical = "End";
++    else if (configuration == "TOP") canonical = "Top";
++    else if (configuration == "ENDTOP") canonical = "EndTop";
++    else {
++        G4cerr << "[DetectorConstruction] Unknown /det/readout \"" << configuration
++               << "\". Use End, Top, or EndTop.\n";
+         return;
+     }
+-    if (materialName == fScintillatorName) return;
++    if (canonical == fReadoutConfiguration) return;
+ 
+-    fScintillatorName = materialName;
++    fReadoutConfiguration = canonical;
+     if (G4StateManager::GetStateManager()->GetCurrentState() != G4State_PreInit) {
+         G4RunManager::GetRunManager()->ReinitializeGeometry();
+     }
+ }
+ 
++G4bool DetectorConstruction::IsEndInstrumented() const {
++    return fReadoutConfiguration == "End" || fReadoutConfiguration == "EndTop";
++}
++
++G4bool DetectorConstruction::IsTopInstrumented() const {
++    return fReadoutConfiguration == "Top" || fReadoutConfiguration == "EndTop";
++}
++
+ // ── SetEdgeWrapMode ──────────────────────────────────────────────────────────
+ void DetectorConstruction::SetEdgeWrapMode(G4String mode) {
+     G4cout << "[DetectorConstruction] /det/edgeWrap " << mode
+@@ -147,12 +182,38 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
+ 
+     // ── Materials ────────────────────────────────────────────────────────────
+     G4Material* worldMat = nist->FindOrBuildMaterial("G4_AIR");
+-    if (fScintillatorName == "EJ200") {
+-        fActiveScintillator = Materials::CreateEJ200();
+-    } else if (fScintillatorName == "EJ230") {
+-        fActiveScintillator = Materials::CreateEJ230();
+-    } else {
+-        fActiveScintillator = Materials::CreateEJ204();
++    fActiveScintillator =
++        OrganicScintillatorFactory::GetInstance()->Get(fScintCode, true);
++    if (fScintCode == "OPSC-101") {
++        auto* mpt = fActiveScintillator->GetMaterialPropertiesTable();
++        if (mpt != nullptr) {
++            auto* attenuation = mpt->GetProperty("ABSLENGTH");
++            G4bool overrideAttenuation =
++                attenuation == nullptr || attenuation->GetVectorLength() == 0;
++            if (!overrideAttenuation) {
++                for (std::size_t i = 0; i < attenuation->GetVectorLength(); ++i) {
++                    if (std::abs((*attenuation)[i] - 160.0 * cm) > 1.0e-9 * cm) {
++                        overrideAttenuation = true;
++                    }
++                }
++            }
++            if (overrideAttenuation) {
++                mpt->RemoveProperty("ABSLENGTH");
++                mpt->AddProperty("ABSLENGTH",
++                                 {1.5 * eV, 6.5 * eV},
++                                 {160.0 * cm, 160.0 * cm});
++                G4cout << "[DetectorConstruction] OPSC-101 ABSLENGTH overridden to 160 cm."
++                       << G4endl;
++            }
++            if (!mpt->ConstPropertyExists("SCINTILLATIONRISETIME1") ||
++                std::abs(mpt->GetConstProperty("SCINTILLATIONRISETIME1") -
++                         0.7 * ns) > 1.0e-12 * ns) {
++                mpt->RemoveConstProperty("SCINTILLATIONRISETIME1");
++                mpt->AddConstProperty("SCINTILLATIONRISETIME1", 0.7 * ns);
++                G4cout << "[DetectorConstruction] OPSC-101 rise time overridden to 0.7 ns."
++                       << G4endl;
++            }
++        }
+     }
+     G4Material* barMat   = fActiveScintillator;
+     G4Material* sipmMat  = Materials::CreateSiPMCoupling();
+@@ -164,7 +225,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
+         worldMat->SetMaterialPropertiesTable(mpt);
+     }
+ 
+-    // SiPM coupling surface (bar–SiPM boundary, polished dielectric–dielectric)
++    // SiPM detection surface: selected PDE as EFFICIENCY and zero reflectivity.
+     auto* sipmSurface = Materials::CreateSiPMSurface();
+ 
+     // ── World volume ─────────────────────────────────────────────────────────
+@@ -185,9 +246,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
+     fBarPhys = new G4PVPlacement(nullptr, {}, barLV, "BarPV",
+                                  worldLV, false, 0, true);
+ 
+-    // ── Reflective panels on non-SiPM faces — models Al-foil + black film ────
+-    // Explicit sibling volumes avoid global skin surfaces shadowing SiPM faces.
+-    // The +Y face is left open for Top SiPMs; end faces are left to End SiPMs.
++    fEndSiPMLV = nullptr;
++    fTopSiPMLV = nullptr;
++    fSiPMSurfaces.clear();
++    fReflectorSurfaces.clear();
++
++    // Reflective panels cover every non-instrumented face. Explicit sibling
++    // volumes avoid global skin surfaces shadowing active SiPM faces.
+     auto* reflector = Materials::CreateBarSkinReflector();
+     const G4double foilHalfT = 0.5 * um;
+     auto* reflYMinusSolid = new G4Box("ReflectorYMinusSolid",
+@@ -207,12 +272,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
+     auto* reflYMinusPhys = new G4PVPlacement(
+         nullptr, {0.0, -(kBarHalfY + foilHalfT), 0.0},
+         reflYMinusLV, "ReflectorYMinusPV", worldLV, false, 0, true);
+-    auto* reflXMinusPhys = new G4PVPlacement(
+-        nullptr, {-(kBarHalfX + foilHalfT), 0.0, 0.0},
+-        reflXLV, "ReflectorXMinusPV", worldLV, false, 1, true);
+-    auto* reflXPlusPhys = new G4PVPlacement(
+-        nullptr, {+(kBarHalfX + foilHalfT), 0.0, 0.0},
+-        reflXLV, "ReflectorXPlusPV", worldLV, false, 2, true);
+     auto* reflZMinusPhys = new G4PVPlacement(
+         nullptr, {0.0, 0.0, -(kBarHalfZ + foilHalfT)},
+         reflZLV, "ReflectorZMinusPV", worldLV, false, 3, true);
+@@ -220,77 +279,89 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
+         nullptr, {0.0, 0.0, +(kBarHalfZ + foilHalfT)},
+         reflZLV, "ReflectorZPlusPV", worldLV, false, 4, true);
+ 
+-    new G4LogicalBorderSurface("BarReflector_YMinus",
+-                               fBarPhys, reflYMinusPhys, reflector);
+-    new G4LogicalBorderSurface("BarReflector_XMinus",
+-                               fBarPhys, reflXMinusPhys, reflector);
+-    new G4LogicalBorderSurface("BarReflector_XPlus",
+-                               fBarPhys, reflXPlusPhys, reflector);
+-    new G4LogicalBorderSurface("BarReflector_ZMinus",
+-                               fBarPhys, reflZMinusPhys, reflector);
+-    new G4LogicalBorderSurface("BarReflector_ZPlus",
+-                               fBarPhys, reflZPlusPhys, reflector);
+-
+-    // ── End SiPMs — 8×1 array on each ±X face ────────────────────────────────
+-    // Placed as BarLV daughters, flush with the ±X faces of the bar.
+-    // x = ±(kBarHalfX - kEndHalfX)
+-    auto* endSolid = new G4Box("EndSiPMSolid", kEndHalfX, kEndHalfY, kEndHalfZ);
+-    fEndSiPMLV     = new G4LogicalVolume(endSolid, sipmMat, "EndSiPMLV");
+-    {
++    fReflectorSurfaces["-Y"] = new G4LogicalBorderSurface(
++        "BarReflector_YMinus", fBarPhys, reflYMinusPhys, reflector);
++    fReflectorSurfaces["-Z"] = new G4LogicalBorderSurface(
++        "BarReflector_ZMinus", fBarPhys, reflZMinusPhys, reflector);
++    fReflectorSurfaces["+Z"] = new G4LogicalBorderSurface(
++        "BarReflector_ZPlus", fBarPhys, reflZPlusPhys, reflector);
++
++    G4VSolid* reflYPlusSolid = new G4Box(
++        "ReflectorYPlusBaseSolid", kBarHalfX, foilHalfT, kBarHalfZ);
++    if (IsTopInstrumented()) {
++        auto* window = new G4Box(
++            "ReflectorYPlusWindowSolid", kTopHalfX, 2.0 * foilHalfT, kTopHalfZ);
++        for (G4int i = 0; i < kNTopSiPMs; ++i) {
++            reflYPlusSolid = new G4SubtractionSolid(
++                "ReflectorYPlusCut_" + std::to_string(i),
++                reflYPlusSolid, window, nullptr,
++                G4ThreeVector(TopSiPMCenterX(i), 0.0, 0.0));
++        }
++    }
++    auto* reflYPlusLV = new G4LogicalVolume(
++        reflYPlusSolid, worldMat, "ReflectorYPlusLV");
++    reflYPlusLV->SetVisAttributes(G4VisAttributes::GetInvisible());
++    auto* reflYPlusPhys = new G4PVPlacement(
++        nullptr, {0.0, +(kBarHalfY + foilHalfT), 0.0},
++        reflYPlusLV, "ReflectorYPlusPV", worldLV, false, 5, true);
++    fReflectorSurfaces["+Y"] = new G4LogicalBorderSurface(
++        "BarReflector_YPlus", fBarPhys, reflYPlusPhys, reflector);
++    if (!IsEndInstrumented()) {
++        auto* reflXMinusPhys = new G4PVPlacement(
++            nullptr, {-(kBarHalfX + foilHalfT), 0.0, 0.0},
++            reflXLV, "ReflectorXMinusPV", worldLV, false, 1, true);
++        auto* reflXPlusPhys = new G4PVPlacement(
++            nullptr, {+(kBarHalfX + foilHalfT), 0.0, 0.0},
++            reflXLV, "ReflectorXPlusPV", worldLV, false, 2, true);
++        fReflectorSurfaces["-X"] = new G4LogicalBorderSurface(
++            "BarReflector_XMinus", fBarPhys, reflXMinusPhys, reflector);
++        fReflectorSurfaces["+X"] = new G4LogicalBorderSurface(
++            "BarReflector_XPlus", fBarPhys, reflXPlusPhys, reflector);
++    }
++
++    if (IsEndInstrumented()) {
++        auto* endSolid = new G4Box("EndSiPMSolid", kEndHalfX, kEndHalfY, kEndHalfZ);
++        fEndSiPMLV = new G4LogicalVolume(endSolid, sipmMat, "EndSiPMLV");
+         auto* va = new G4VisAttributes(G4Colour(0.0, 0.85, 0.2, 0.6));
+         va->SetForceSolid(true);
+         fEndSiPMLV->SetVisAttributes(va);
+-    }
+ 
+-    fSiPMSurfaces.clear();
+-
+-    for (G4int i = 0; i < kNEndSiPMs; ++i) {
+-        const G4double cy = (i - 3.5) * kEndPitch;
+-
+-        const G4int leftId = i;
+-        auto* leftPhys = new G4PVPlacement(
+-            nullptr,
+-            G4ThreeVector(-(kBarHalfX - kEndHalfX), cy, 0.0),
+-            fEndSiPMLV, "EndSiPMLeft_PV", barLV, false, leftId, true);
+-        // Border surface: BarPV → SiPM
+-        fSiPMSurfaces[leftId] = new G4LogicalBorderSurface(
+-            "SiPMSurf_" + std::to_string(leftId),
+-            fBarPhys, leftPhys, sipmSurface);
+-
+-        const G4int rightId = i + kNEndSiPMs;
+-        auto* rightPhys = new G4PVPlacement(
+-            nullptr,
+-            G4ThreeVector(+(kBarHalfX - kEndHalfX), cy, 0.0),
+-            fEndSiPMLV, "EndSiPMRight_PV", barLV, false, rightId, true);
+-        fSiPMSurfaces[rightId] = new G4LogicalBorderSurface(
+-            "SiPMSurf_" + std::to_string(rightId),
+-            fBarPhys, rightPhys, sipmSurface);
++        for (G4int i = 0; i < kNEndSiPMs; ++i) {
++            const G4double cy = (i - 3.5) * kEndPitch;
++            const G4int leftId = i;
++            auto* leftPhys = new G4PVPlacement(
++                nullptr, G4ThreeVector(-(kBarHalfX - kEndHalfX), cy, 0.0),
++                fEndSiPMLV, "EndSiPMLeft_PV", barLV, false, leftId, true);
++            fSiPMSurfaces[leftId] = new G4LogicalBorderSurface(
++                "SiPMSurf_" + std::to_string(leftId), fBarPhys, leftPhys, sipmSurface);
++
++            const G4int rightId = i + kNEndSiPMs;
++            auto* rightPhys = new G4PVPlacement(
++                nullptr, G4ThreeVector(+(kBarHalfX - kEndHalfX), cy, 0.0),
++                fEndSiPMLV, "EndSiPMRight_PV", barLV, false, rightId, true);
++            fSiPMSurfaces[rightId] = new G4LogicalBorderSurface(
++                "SiPMSurf_" + std::to_string(rightId), fBarPhys, rightPhys, sipmSurface);
++        }
+     }
+ 
+-    // ── Top SiPMs — N SiPMs along the +Y face, configurable pitch ────────────
+-    // N = fNTopSiPMs is computed from fTopSiPMPitch (default 70 mm → 20 SiPMs).
+-    // Placed as BarLV daughters, flush with the +Y face of the bar.
+-    // y = kBarHalfY - kTopHalfY
+-    auto* topSolid = new G4Box("TopSiPMSolid", kTopHalfX, kTopHalfY, kTopHalfZ);
+-    fTopSiPMLV     = new G4LogicalVolume(topSolid, sipmMat, "TopSiPMLV");
+-    {
++    if (IsTopInstrumented()) {
++        auto* topSolid = new G4Box("TopSiPMSolid", kTopHalfX, kTopHalfY, kTopHalfZ);
++        fTopSiPMLV = new G4LogicalVolume(topSolid, sipmMat, "TopSiPMLV");
+         auto* va = new G4VisAttributes(G4Colour(1.0, 0.2, 0.0, 0.6));
+         va->SetForceSolid(true);
+         fTopSiPMLV->SetVisAttributes(va);
+-    }
+ 
+-    for (G4int i = 0; i < fNTopSiPMs; ++i) {
+-        const G4int    globalId = 2 * kNEndSiPMs + i;  // 16, 17, …
+-        const G4double cx       = TopSiPMCenterX(i, fTopSiPMPitch, fNTopSiPMs);
++        for (G4int i = 0; i < kNTopSiPMs; ++i) {
++            const G4int globalId = 2 * kNEndSiPMs + i;
++            const G4double cx = TopSiPMCenterX(i);
+ 
+-        auto* topPhys = new G4PVPlacement(
+-            nullptr,
+-            G4ThreeVector(cx, kBarHalfY - kTopHalfY, 0.0),
+-            fTopSiPMLV, "TopSiPMPV", barLV, false, globalId, true);
++            auto* topPhys = new G4PVPlacement(
++                nullptr, G4ThreeVector(cx, kBarHalfY - kTopHalfY, 0.0),
++                fTopSiPMLV, "TopSiPMPV", barLV, false, globalId, true);
+ 
+-        fSiPMSurfaces[globalId] = new G4LogicalBorderSurface(
+-            "SiPMSurf_" + std::to_string(globalId),
+-            fBarPhys, topPhys, sipmSurface);
++            fSiPMSurfaces[globalId] = new G4LogicalBorderSurface(
++                "SiPMSurf_" + std::to_string(globalId), fBarPhys, topPhys, sipmSurface);
++        }
+     }
+ 
+     return worldPhys;
+@@ -307,6 +378,6 @@ void DetectorConstruction::ConstructSDandField() {
+         sdManager->AddNewDetector(sipmSD);
+     }
+ 
+-    SetSensitiveDetector(fEndSiPMLV, sipmSD);
+-    SetSensitiveDetector(fTopSiPMLV, sipmSD);
++    if (fEndSiPMLV != nullptr) SetSensitiveDetector(fEndSiPMLV, sipmSD);
++    if (fTopSiPMLV != nullptr) SetSensitiveDetector(fTopSiPMLV, sipmSD);
+ }
+diff --git a/tests/check_endtop_balance.py b/tests/check_endtop_balance.py
+new file mode 100644
+index 0000000..295fba6
+--- /dev/null
++++ b/tests/check_endtop_balance.py
+@@ -0,0 +1,49 @@
++#!/usr/bin/env python3
++"""Run the 50-event center smoke and reject an anomalously open wrapped face."""
++
++from __future__ import annotations
++
++import pathlib
++import re
++import subprocess
++import sys
++
++
++def value(log: str, label: str) -> int:
++    matches = re.findall(rf"{re.escape(label)}\s*:\s*(\d+)", log)
++    if not matches:
++        raise SystemExit(f"missing diagnostic '{label}'")
++    return int(matches[-1])
++
++
++def main() -> int:
++    executable = pathlib.Path(sys.argv[1]).resolve()
++    macro = pathlib.Path(sys.argv[2]).resolve()
++    completed = subprocess.run(
++        [str(executable), "-m", str(macro)],
++        cwd=executable.parent,
++        text=True,
++        stdout=subprocess.PIPE,
++        stderr=subprocess.STDOUT,
++        check=True,
++    )
++    log = completed.stdout
++    generated = value(log, "Scint photons generated")
++    escaped = value(log, "Bar -> World (escaped)")
++    detected = value(log, "Total photons detected")
++    if generated <= 0 or detected <= 0:
++        raise SystemExit("smoke run generated no scintillation light or detected no photons")
++    escape_fraction = escaped / generated
++    if escape_fraction >= 0.95:
++        raise SystemExit(
++            f"wrapped-face escape fraction {escape_fraction:.3f} is compatible with an open face"
++        )
++    print(
++        "endtop_balance_smoke PASSED: "
++        f"escaped/generated={escape_fraction:.4f}, detected={detected}"
++    )
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/tests/readout_config_check.cc b/tests/readout_config_check.cc
+new file mode 100644
+index 0000000..7039819
+--- /dev/null
++++ b/tests/readout_config_check.cc
+@@ -0,0 +1,147 @@
++#include "DetectorConstruction.hh"
++
++#include "G4LogicalBorderSurface.hh"
++#include "G4LogicalSkinSurface.hh"
++#include "G4LogicalVolume.hh"
++#include "G4MaterialPropertiesTable.hh"
++#include "G4OpticalSurface.hh"
++#include "G4SystemOfUnits.hh"
++#include "G4VPhysicalVolume.hh"
++#include "G4VSolid.hh"
++
++#include <cmath>
++#include <cstdlib>
++#include <iostream>
++#include <set>
++#include <string>
++
++namespace {
++[[noreturn]] void Fail(const std::string& message) {
++    std::cerr << "readout_config_check FAILED: " << message << '\n';
++    std::exit(EXIT_FAILURE);
++}
++
++void Require(bool condition, const std::string& message) {
++    if (!condition) Fail(message);
++}
++
++void RequireBarSkin(const DetectorConstruction& detector) {
++    const auto& sipmSurfaces = detector.GetSiPMSurfaces();
++    Require(!sipmSurfaces.empty(), "no SiPM surfaces");
++    auto* barPV = sipmSurfaces.begin()->second->GetVolume1();
++    Require(barPV != nullptr, "SiPM border has no volume1");
++    auto* barLV = barPV->GetLogicalVolume();
++    Require(barLV != nullptr, "BarPV has no logical volume");
++
++    auto* skin = G4LogicalSkinSurface::GetSurface(barLV);
++    Require(skin != nullptr, "BarLV has no reflector skin surface");
++    auto* optical = dynamic_cast<G4OpticalSurface*>(skin->GetSurfaceProperty());
++    Require(optical != nullptr, "Bar skin is not an optical surface");
++    Require(optical->GetName() == "BarSkinReflector",
++        "Bar skin does not use BarSkinReflector");
++    Require(detector.GetReflectorSurfaces().empty(),
++        "reflector panel border surfaces should be removed");
++}
++
++void RequireSiPMSurfaceProperties(const DetectorConstruction& detector) {
++    const auto& surfaces = detector.GetSiPMSurfaces();
++    Require(!surfaces.empty(), "no SiPM surfaces");
++    auto* optical = dynamic_cast<G4OpticalSurface*>(
++        surfaces.begin()->second->GetSurfaceProperty());
++    Require(optical != nullptr, "SiPM border is not an optical surface");
++    auto* mpt = optical->GetMaterialPropertiesTable();
++    Require(mpt != nullptr, "SiPM surface has no MPT");
++    auto* efficiency = mpt->GetProperty("EFFICIENCY");
++    auto* reflectivity = mpt->GetProperty("REFLECTIVITY");
++    Require(efficiency != nullptr, "SiPM surface has no EFFICIENCY");
++    Require(reflectivity != nullptr, "SiPM surface has no REFLECTIVITY");
++    const G4double energy420 = 1239.84193 * eV * nm / (420.0 * nm);
++    Require(std::abs(efficiency->Value(energy420) - 0.63) < 1.0e-6,
++            "Broadcom PDE is not 63% at 420 nm");
++    Require(std::abs(reflectivity->Value(energy420)) < 1.0e-12,
++            "SiPM reflectivity is not zero");
++}
++
++void RequireEndTopPlacements(const DetectorConstruction& detector) {
++    const auto& surfaces = detector.GetSiPMSurfaces();
++    Require(surfaces.size() == DetectorConstruction::kNTotalSiPMs,
++            "EndTop does not have 86 SiPM border surfaces");
++
++    std::set<G4int> copyNumbers;
++    for (G4int globalId = 0; globalId < DetectorConstruction::kNTotalSiPMs; ++globalId) {
++        const auto found = surfaces.find(globalId);
++        Require(found != surfaces.end(), "missing global ID " + std::to_string(globalId));
++        auto* physical = found->second->GetVolume2();
++        Require(physical != nullptr, "surface has no SiPM physical volume");
++        Require(physical->GetCopyNo() == globalId,
++                "copy number differs from global ID " + std::to_string(globalId));
++        Require(copyNumbers.insert(physical->GetCopyNo()).second,
++                "duplicate copy number " + std::to_string(globalId));
++        if (globalId >= 16) {
++            const G4int localId = globalId - 16;
++            const G4double expected = DetectorConstruction::TopSiPMCenterX(localId);
++            Require(std::abs(physical->GetTranslation().x() - expected) < 0.01 * mm,
++                    "wrong Top x for global ID " + std::to_string(globalId));
++            Require(std::abs(physical->GetTranslation().z()) < 0.01 * mm,
++                    "wrong Top z for global ID " + std::to_string(globalId));
++        }
++    }
++    Require(std::abs(DetectorConstruction::TopSiPMCenterX(35) -
++                     DetectorConstruction::TopSiPMCenterX(34) - 24.0 * mm) < 0.01 * mm,
++            "central Top pair is not separated by 24 mm");
++}
++
++void CheckEnd() {
++    DetectorConstruction detector;
++    Require(detector.GetReadoutConfiguration() == "End", "default configuration is not End");
++    detector.Construct();
++
++    Require(detector.IsEndInstrumented(), "End config does not instrument the ends");
++    Require(!detector.IsTopInstrumented(), "End config instruments Top");
++    Require(detector.GetNActiveEndSiPMs() == 16, "End config does not activate 16 End SiPMs");
++    Require(detector.GetNActiveTopSiPMs() == 0, "End config activates Top SiPMs");
++    Require(detector.GetSiPMSurfaces().size() == 16, "End config has wrong SiPM surface count");
++    RequireBarSkin(detector);
++    RequireSiPMSurfaceProperties(detector);
++}
++
++void CheckTop() {
++    DetectorConstruction detector;
++    detector.SetReadoutConfiguration("Top");
++    detector.Construct();
++
++    Require(!detector.IsEndInstrumented(), "Top config instruments End");
++    Require(detector.IsTopInstrumented(), "Top config does not instrument Top");
++    Require(detector.GetNActiveEndSiPMs() == 0, "Top config activates End SiPMs");
++    Require(detector.GetNActiveTopSiPMs() == detector.GetNTopSiPMs(),
++            "Top config has wrong active Top SiPM count");
++    Require(detector.GetNActiveTopSiPMs() == 70, "Top config does not activate 70 Top SiPMs");
++    Require(detector.GetSiPMSurfaces().size() ==
++                static_cast<std::size_t>(detector.GetNTopSiPMs()),
++            "Top config has wrong SiPM surface count");
++    RequireBarSkin(detector);
++    RequireSiPMSurfaceProperties(detector);
++}
++
++void CheckEndTop() {
++    DetectorConstruction detector;
++    detector.SetReadoutConfiguration("EndTop");
++    detector.Construct();
++
++    Require(detector.IsEndInstrumented() && detector.IsTopInstrumented(),
++            "EndTop does not instrument both readouts");
++    Require(detector.GetNActiveEndSiPMs() == 16, "EndTop does not activate 16 End SiPMs");
++    Require(detector.GetNActiveTopSiPMs() == 70, "EndTop does not activate 70 Top SiPMs");
++    RequireBarSkin(detector);
++    RequireEndTopPlacements(detector);
++    RequireSiPMSurfaceProperties(detector);
++}
++} // namespace
++
++int main() {
++    CheckEnd();
++    CheckTop();
++    CheckEndTop();
++    std::cout << "readout_config_check PASSED\n";
++    return EXIT_SUCCESS;
++}

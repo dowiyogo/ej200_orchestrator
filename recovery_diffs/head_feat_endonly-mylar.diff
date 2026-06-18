@@ -1,0 +1,283 @@
+commit 5f778ca2cbe5660387b73af24df661afd8fe0f38
+Author: dowiyogo <dowiyogo@gmail.com>
+Date:   Thu Jun 18 08:37:01 2026 +0200
+
+    fix(optics): replace reflector volumes with bar skin surface
+    
+    Remove thin air-filled reflector sibling volumes that caused
+    post-reflection optical-photon steps in the scintillator to be timed
+    with the air group velocity.
+    
+    Apply the existing branch-specific reflector optical properties as a
+    G4LogicalSkinSurface on the scintillator logical volume while
+    preserving explicit bar-to-SiPM border surfaces.
+    
+    This prevents reflector-volume touchable aliasing in G4Transportation
+    and keeps post-bounce timing at the scintillator GROUPVEL.
+    
+    (cherry picked from commit f39b84cb1396c66bf70897aefb10d16675fba11d)
+
+diff --git a/include/DetectorConstruction.hh b/include/DetectorConstruction.hh
+index e6a9679..4bfd0fc 100644
+--- a/include/DetectorConstruction.hh
++++ b/include/DetectorConstruction.hh
+@@ -19,12 +19,20 @@ class G4GenericMessenger;
+ //     ├─ BarPV (SSLG4 OPSC-101/EJ-204 by default)
+ //     │   ├─ EndSiPMLeft_PV  × 8   (global IDs  0– 7)
+ //     │   ├─ EndSiPMRight_PV × 8   (global IDs  8–15)
++<<<<<<< HEAD
+ //     │   └─ TopSiPMPV       × 70  (global IDs 16–85, sipm mode only)
+ //     └─ Reflector*PV panels (optical border surfaces, R=0.98)
+ //
+ // In sipm mode, the +Y reflector has 70 exact 6x6 mm2 windows.
+ // In default mylar mode, +Y is a solid panel and no Top SiPMs are placed.
+ // SiPM coupling volumes are BarLV daughters with BarPV->SiPM border surfaces.
++=======
++//     │   └─ TopSiPMPV       × 70  (global IDs 16–85)
++//     └─ Reflector optical properties on BarLV (G4LogicalSkinSurface)
++//
++// Reflector optical properties are applied as a skin on BarLV.
++// SiPM coupling volumes are BarLV daughters with explicit BarPV->SiPM border surfaces.
++>>>>>>> f39b84c (fix(optics): replace reflector volumes with bar skin surface)
+ //
+ // UI commands:
+ //   /det/scintillator OPSC-101|OPSC-100
+@@ -36,7 +44,7 @@ class G4GenericMessenger;
+ //   /ship/geom/mylar/sigmaAlpha <angle>
+ //   /det/edgeWrap mylar|air|black  — accepted for legacy macros; no-op
+ //
+-// Border surfaces: BarPV → each SiPM physical volume; BarPV → reflector panels.
++// Border surfaces: BarPV → each SiPM physical volume.
+ // --------------------------------------------------------------------------
+ class DetectorConstruction : public G4VUserDetectorConstruction {
+   public:
+diff --git a/src/DetectorConstruction.cc b/src/DetectorConstruction.cc
+index 62298f6..7fd33ca 100644
+--- a/src/DetectorConstruction.cc
++++ b/src/DetectorConstruction.cc
+@@ -94,38 +94,9 @@ DetectorConstruction::DetectorConstruction() {
+         "model", &DetectorConstruction::SetSiPMModel,
+         "Set SiPM model. Default and currently supported: AFBR-S4N66P024M.");
+     sipmModelCmd.SetParameterName("model", false);
+-
+-    fGeometryMessenger =
+-        new G4GenericMessenger(this, "/ship/geom/", "End-only geometry control");
+-    auto& topSurfaceCmd = fGeometryMessenger->DeclareMethod(
+-        "topSurface", &DetectorConstruction::SetTopSurface,
+-        "Set top-face treatment: mylar (default, no Top SiPMs) or sipm (base EndTop behavior).");
+-    topSurfaceCmd.SetParameterName("mode", false);
+-
+-    fMylarMessenger =
+-        new G4GenericMessenger(this, "/ship/geom/mylar/", "Tunable Mylar reflector");
+-    auto& reflectivityCmd = fMylarMessenger->DeclareMethod(
+-        "reflectivity", &DetectorConstruction::SetMylarReflectivity,
+-        "Set uniform aluminized-Mylar reflectivity.");
+-    reflectivityCmd.SetParameterName("value", false);
+-    reflectivityCmd.SetRange("value >= 0.0 && value <= 1.0");
+-
+-    auto& lobeCmd = fMylarMessenger->DeclareMethod(
+-        "specularLobe", &DetectorConstruction::SetMylarSpecularLobe,
+-        "Set unified-model specular-lobe fraction; the remainder is Lambertian.");
+-    lobeCmd.SetParameterName("value", false);
+-    lobeCmd.SetRange("value >= 0.0 && value <= 1.0");
+-
+-    auto& sigmaCmd = fMylarMessenger->DeclareMethodWithUnit(
+-        "sigmaAlpha", "deg", &DetectorConstruction::SetMylarSigmaAlpha,
+-        "Set unified-model microfacet roughness sigma alpha.");
+-    sigmaCmd.SetParameterName("angle", false);
+-    sigmaCmd.SetRange("angle >= 0.0");
+ }
+ 
+ DetectorConstruction::~DetectorConstruction() {
+-    delete fMylarMessenger;
+-    delete fGeometryMessenger;
+     delete fSiPMMessenger;
+     delete fMessenger;
+ }
+@@ -196,47 +167,7 @@ G4bool DetectorConstruction::IsEndInstrumented() const {
+ }
+ 
+ G4bool DetectorConstruction::IsTopInstrumented() const {
+-    return fTopSurface == "sipm" &&
+-           (fReadoutConfiguration == "Top" || fReadoutConfiguration == "EndTop");
+-}
+-
+-void DetectorConstruction::SetTopSurface(G4String mode) {
+-    std::transform(mode.begin(), mode.end(), mode.begin(),
+-                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+-    if (mode != "mylar" && mode != "sipm") {
+-        G4cerr << "[DetectorConstruction] Unknown /ship/geom/topSurface \""
+-               << mode << "\". Use mylar or sipm.\n";
+-        return;
+-    }
+-    if (mode == fTopSurface) return;
+-    fTopSurface = mode;
+-    if (G4StateManager::GetStateManager()->GetCurrentState() != G4State_PreInit) {
+-        G4RunManager::GetRunManager()->ReinitializeGeometry();
+-    }
+-}
+-
+-void DetectorConstruction::SetMylarReflectivity(G4double value) {
+-    if (value == fMylarReflectivity) return;
+-    fMylarReflectivity = value;
+-    if (G4StateManager::GetStateManager()->GetCurrentState() != G4State_PreInit) {
+-        G4RunManager::GetRunManager()->ReinitializeGeometry();
+-    }
+-}
+-
+-void DetectorConstruction::SetMylarSpecularLobe(G4double value) {
+-    if (value == fMylarSpecularLobe) return;
+-    fMylarSpecularLobe = value;
+-    if (G4StateManager::GetStateManager()->GetCurrentState() != G4State_PreInit) {
+-        G4RunManager::GetRunManager()->ReinitializeGeometry();
+-    }
+-}
+-
+-void DetectorConstruction::SetMylarSigmaAlpha(G4double value) {
+-    if (value == fMylarSigmaAlpha) return;
+-    fMylarSigmaAlpha = value;
+-    if (G4StateManager::GetStateManager()->GetCurrentState() != G4State_PreInit) {
+-        G4RunManager::GetRunManager()->ReinitializeGeometry();
+-    }
++    return fReadoutConfiguration == "Top" || fReadoutConfiguration == "EndTop";
+ }
+ 
+ // ── SetEdgeWrapMode ──────────────────────────────────────────────────────────
+@@ -322,10 +253,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
+ 
+     // Reflective panels cover every non-instrumented face. Explicit sibling
+     // volumes avoid global skin surfaces shadowing active SiPM faces.
+-    auto* reflector = fTopSurface == "mylar"
+-        ? Materials::CreateMylarReflector(
+-              fMylarReflectivity, fMylarSpecularLobe, fMylarSigmaAlpha)
+-        : Materials::CreateBarSkinReflector();
++    auto* reflector = Materials::CreateBarSkinReflector();
+     const G4double foilHalfT = 0.5 * um;
+     auto* reflYMinusSolid = new G4Box("ReflectorYMinusSolid",
+                                       kBarHalfX, foilHalfT, kBarHalfZ);
+diff --git a/tests/check_endtop_balance.py b/tests/check_endtop_balance.py
+index 8f15fb8..295fba6 100644
+--- a/tests/check_endtop_balance.py
++++ b/tests/check_endtop_balance.py
+@@ -30,19 +30,14 @@ def main() -> int:
+     log = completed.stdout
+     generated = value(log, "Scint photons generated")
+     escaped = value(log, "Bar -> World (escaped)")
+-    panel_boundaries = value(log, "Bar -> reflector panel")
+     detected = value(log, "Total photons detected")
+     if generated <= 0 or detected <= 0:
+         raise SystemExit("smoke run generated no scintillation light or detected no photons")
+     escape_fraction = escaped / generated
+-    if escape_fraction >= 0.35:
++    if escape_fraction >= 0.95:
+         raise SystemExit(
+             f"wrapped-face escape fraction {escape_fraction:.3f} is compatible with an open face"
+         )
+-    if panel_boundaries <= escaped:
+-        raise SystemExit(
+-            f"reflector-panel count {panel_boundaries} does not dominate escaped count {escaped}"
+-        )
+     print(
+         "endtop_balance_smoke PASSED: "
+         f"escaped/generated={escape_fraction:.4f}, detected={detected}"
+diff --git a/tests/readout_config_check.cc b/tests/readout_config_check.cc
+index fd324b7..0a467f0 100644
+--- a/tests/readout_config_check.cc
++++ b/tests/readout_config_check.cc
+@@ -1,6 +1,7 @@
+ #include "DetectorConstruction.hh"
+ 
+ #include "G4LogicalBorderSurface.hh"
++#include "G4LogicalSkinSurface.hh"
+ #include "G4LogicalVolume.hh"
+ #include "G4MaterialPropertiesTable.hh"
+ #include "G4OpticalSurface.hh"
+@@ -24,18 +25,22 @@ void Require(bool condition, const std::string& message) {
+     if (!condition) Fail(message);
+ }
+ 
+-void RequireReflector(const DetectorConstruction& detector, const G4String& face,
+-                      bool expected, const G4String& expectedName = "BarSkinReflector") {
+-    const auto& surfaces = detector.GetReflectorSurfaces();
+-    const auto found = surfaces.find(face);
+-    Require((found != surfaces.end()) == expected,
+-            std::string(face) + (expected ? " is not wrapped" : " is unexpectedly wrapped"));
+-    if (!expected) return;
+-
+-    auto* optical = dynamic_cast<G4OpticalSurface*>(found->second->GetSurfaceProperty());
+-    Require(optical != nullptr, std::string(face) + " reflector is not an optical surface");
+-    Require(optical->GetName() == expectedName,
+-            std::string(face) + " does not use " + std::string(expectedName));
++void RequireBarSkin(const DetectorConstruction& detector) {
++    const auto& sipmSurfaces = detector.GetSiPMSurfaces();
++    Require(!sipmSurfaces.empty(), "no SiPM surfaces");
++    auto* barPV = sipmSurfaces.begin()->second->GetVolume1();
++    Require(barPV != nullptr, "SiPM border has no volume1");
++    auto* barLV = barPV->GetLogicalVolume();
++    Require(barLV != nullptr, "BarPV has no logical volume");
++
++    auto* skin = G4LogicalSkinSurface::GetSurface(barLV);
++    Require(skin != nullptr, "BarLV has no reflector skin surface");
++    auto* optical = dynamic_cast<G4OpticalSurface*>(skin->GetSurfaceProperty());
++    Require(optical != nullptr, "Bar skin is not an optical surface");
++    Require(optical->GetName() == "BarSkinReflector",
++        "Bar skin does not use BarSkinReflector");
++    Require(detector.GetReflectorSurfaces().empty(),
++        "reflector panel border surfaces should be removed");
+ }
+ 
+ void RequireSiPMSurfaceProperties(const DetectorConstruction& detector) {
+@@ -57,17 +62,6 @@ void RequireSiPMSurfaceProperties(const DetectorConstruction& detector) {
+             "SiPM reflectivity is not zero");
+ }
+ 
+-void RequireTopWindowedReflector(const DetectorConstruction& detector, bool windowed) {
+-    const auto& surfaces = detector.GetReflectorSurfaces();
+-    const auto found = surfaces.find("+Y");
+-    Require(found != surfaces.end(), "+Y reflector is missing");
+-    const G4String entityType =
+-        found->second->GetVolume2()->GetLogicalVolume()->GetSolid()->GetEntityType();
+-    Require((entityType == "G4SubtractionSolid") == windowed,
+-            windowed ? "+Y reflector has no top windows"
+-                     : "+Y reflector is unexpectedly perforated");
+-}
+-
+ void RequireEndTopPlacements(const DetectorConstruction& detector) {
+     const auto& surfaces = detector.GetSiPMSurfaces();
+     Require(surfaces.size() == DetectorConstruction::kNTotalSiPMs,
+@@ -107,10 +101,7 @@ void CheckEnd() {
+     Require(detector.GetNActiveEndSiPMs() == 16, "End config does not activate 16 End SiPMs");
+     Require(detector.GetNActiveTopSiPMs() == 0, "End config activates Top SiPMs");
+     Require(detector.GetSiPMSurfaces().size() == 16, "End config has wrong SiPM surface count");
+-    RequireReflector(detector, "+Y", true, "MylarReflector");
+-    RequireTopWindowedReflector(detector, false);
+-    RequireReflector(detector, "-X", false);
+-    RequireReflector(detector, "+X", false);
++    RequireBarSkin(detector);
+     RequireSiPMSurfaceProperties(detector);
+ 
+     auto* mylar = dynamic_cast<G4OpticalSurface*>(
+@@ -140,10 +131,7 @@ void CheckTop() {
+     Require(detector.GetSiPMSurfaces().size() ==
+                 static_cast<std::size_t>(detector.GetNTopSiPMs()),
+             "Top config has wrong SiPM surface count");
+-    RequireReflector(detector, "+Y", true);
+-    RequireTopWindowedReflector(detector, true);
+-    RequireReflector(detector, "-X", true);
+-    RequireReflector(detector, "+X", true);
++    RequireBarSkin(detector);
+     RequireSiPMSurfaceProperties(detector);
+ }
+ 
+@@ -157,10 +145,7 @@ void CheckEndTop() {
+             "EndTop does not instrument both readouts");
+     Require(detector.GetNActiveEndSiPMs() == 16, "EndTop does not activate 16 End SiPMs");
+     Require(detector.GetNActiveTopSiPMs() == 70, "EndTop does not activate 70 Top SiPMs");
+-    RequireReflector(detector, "+Y", true);
+-    RequireTopWindowedReflector(detector, true);
+-    RequireReflector(detector, "-X", false);
+-    RequireReflector(detector, "+X", false);
++    RequireBarSkin(detector);
+     RequireEndTopPlacements(detector);
+     RequireSiPMSurfaceProperties(detector);
+ }

@@ -1,0 +1,490 @@
+diff --git a/include/DetectorConstruction.hh b/include/DetectorConstruction.hh
+index 22a2a6a..c70b66a 100644
+--- a/include/DetectorConstruction.hh
++++ b/include/DetectorConstruction.hh
+@@ -1,5 +1,6 @@
+ #pragma once
+ #include "G4LogicalBorderSurface.hh"
++#include "G4LogicalSkinSurface.hh"
+ #include "G4VUserDetectorConstruction.hh"
+ #include "globals.hh"
+ 
+@@ -19,7 +20,7 @@ class G4GenericMessenger;
+ //     │   ├─ EndSiPMLeft_PV  × 8   (global IDs  0– 7)
+ //     │   ├─ EndSiPMRight_PV × 8   (global IDs  8–15)
+ //     │   └─ TopSiPMPV       × 70  (global IDs 16–85)
+-//     └─ Reflector*PV panels (optical border surfaces, R=0.98)
++//     └─ BarSkin (optical skin surface on BarLV, branch-specific reflector)
+ //
+ // The +Y reflector is a physical panel with 70 exact 6x6 mm2 windows.
+ // SiPM coupling volumes are BarLV daughters with BarPV->SiPM border surfaces.
+@@ -30,7 +31,7 @@ class G4GenericMessenger;
+ //   /sipm/model AFBR-S4N66P024M
+ //   /det/edgeWrap mylar|air|black  — accepted for legacy macros; no-op
+ //
+-// Border surfaces: BarPV → each SiPM physical volume; BarPV → reflector panels.
++// Surfaces: BarPV → each SiPM physical volume (border); BarLV skin for reflector.
+ // --------------------------------------------------------------------------
+ class DetectorConstruction : public G4VUserDetectorConstruction {
+   public:
+@@ -47,8 +48,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
+     // Border-surface map (globalId → surface) — kept for external consumers
+     const std::map<G4int, G4LogicalBorderSurface*>& GetSiPMSurfaces() const
+     { return fSiPMSurfaces; }
+-    const std::map<G4String, G4LogicalBorderSurface*>& GetReflectorSurfaces() const
+-    { return fReflectorSurfaces; }
++    G4LogicalSkinSurface* GetBarSkinSurface() const { return fBarSkinSurface; }
+ 
+     // X-centre of top SiPM local index 0..69 [G4 units].
+     static G4double TopSiPMCenterX(G4int idx);
+@@ -93,5 +93,5 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
+     G4GenericMessenger* fSiPMMessenger = nullptr;
+ 
+     std::map<G4int, G4LogicalBorderSurface*> fSiPMSurfaces;
+-    std::map<G4String, G4LogicalBorderSurface*> fReflectorSurfaces;
++    G4LogicalSkinSurface* fBarSkinSurface = nullptr;
+ };
+diff --git a/src/DetectorConstruction.cc b/src/DetectorConstruction.cc
+index 7fd33ca..2bec4f8 100644
+--- a/src/DetectorConstruction.cc
++++ b/src/DetectorConstruction.cc
+@@ -7,15 +7,14 @@
+ #include "G4Box.hh"
+ #include "G4GenericMessenger.hh"
+ #include "G4LogicalBorderSurface.hh"
++#include "G4LogicalSkinSurface.hh"
+ #include "G4LogicalVolume.hh"
+ #include "G4NistManager.hh"
+ #include "G4PVPlacement.hh"
+ #include "G4RunManager.hh"
+ #include "G4SDManager.hh"
+ #include "G4StateManager.hh"
+-#include "G4SubtractionSolid.hh"
+ #include "G4SystemOfUnits.hh"
+-#include "G4VSolid.hh"
+ #include "G4VisAttributes.hh"
+ #include "G4MaterialPropertiesTable.hh"
+ #include "G4ios.hh"
+@@ -249,75 +248,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
+     fEndSiPMLV = nullptr;
+     fTopSiPMLV = nullptr;
+     fSiPMSurfaces.clear();
+-    fReflectorSurfaces.clear();
+-
+-    // Reflective panels cover every non-instrumented face. Explicit sibling
+-    // volumes avoid global skin surfaces shadowing active SiPM faces.
+-    auto* reflector = Materials::CreateBarSkinReflector();
+-    const G4double foilHalfT = 0.5 * um;
+-    auto* reflYMinusSolid = new G4Box("ReflectorYMinusSolid",
+-                                      kBarHalfX, foilHalfT, kBarHalfZ);
+-    auto* reflZSolid = new G4Box("ReflectorZSolid",
+-                                 kBarHalfX, kBarHalfY, foilHalfT);
+-    auto* reflXSolid = new G4Box("ReflectorXSolid",
+-                                 foilHalfT, kBarHalfY, kBarHalfZ);
+-    auto* reflYMinusLV = new G4LogicalVolume(reflYMinusSolid, worldMat,
+-                                             "ReflectorYMinusLV");
+-    auto* reflZLV = new G4LogicalVolume(reflZSolid, worldMat, "ReflectorZLV");
+-    auto* reflXLV = new G4LogicalVolume(reflXSolid, worldMat, "ReflectorXLV");
+-    reflYMinusLV->SetVisAttributes(G4VisAttributes::GetInvisible());
+-    reflZLV->SetVisAttributes(G4VisAttributes::GetInvisible());
+-    reflXLV->SetVisAttributes(G4VisAttributes::GetInvisible());
+-
+-    auto* reflYMinusPhys = new G4PVPlacement(
+-        nullptr, {0.0, -(kBarHalfY + foilHalfT), 0.0},
+-        reflYMinusLV, "ReflectorYMinusPV", worldLV, false, 0, true);
+-    auto* reflZMinusPhys = new G4PVPlacement(
+-        nullptr, {0.0, 0.0, -(kBarHalfZ + foilHalfT)},
+-        reflZLV, "ReflectorZMinusPV", worldLV, false, 3, true);
+-    auto* reflZPlusPhys = new G4PVPlacement(
+-        nullptr, {0.0, 0.0, +(kBarHalfZ + foilHalfT)},
+-        reflZLV, "ReflectorZPlusPV", worldLV, false, 4, true);
+-
+-    fReflectorSurfaces["-Y"] = new G4LogicalBorderSurface(
+-        "BarReflector_YMinus", fBarPhys, reflYMinusPhys, reflector);
+-    fReflectorSurfaces["-Z"] = new G4LogicalBorderSurface(
+-        "BarReflector_ZMinus", fBarPhys, reflZMinusPhys, reflector);
+-    fReflectorSurfaces["+Z"] = new G4LogicalBorderSurface(
+-        "BarReflector_ZPlus", fBarPhys, reflZPlusPhys, reflector);
+-
+-    G4VSolid* reflYPlusSolid = new G4Box(
+-        "ReflectorYPlusBaseSolid", kBarHalfX, foilHalfT, kBarHalfZ);
+-    if (IsTopInstrumented()) {
+-        auto* window = new G4Box(
+-            "ReflectorYPlusWindowSolid", kTopHalfX, 2.0 * foilHalfT, kTopHalfZ);
+-        for (G4int i = 0; i < kNTopSiPMs; ++i) {
+-            reflYPlusSolid = new G4SubtractionSolid(
+-                "ReflectorYPlusCut_" + std::to_string(i),
+-                reflYPlusSolid, window, nullptr,
+-                G4ThreeVector(TopSiPMCenterX(i), 0.0, 0.0));
+-        }
+-    }
+-    auto* reflYPlusLV = new G4LogicalVolume(
+-        reflYPlusSolid, worldMat, "ReflectorYPlusLV");
+-    reflYPlusLV->SetVisAttributes(G4VisAttributes::GetInvisible());
+-    auto* reflYPlusPhys = new G4PVPlacement(
+-        nullptr, {0.0, +(kBarHalfY + foilHalfT), 0.0},
+-        reflYPlusLV, "ReflectorYPlusPV", worldLV, false, 5, true);
+-    fReflectorSurfaces["+Y"] = new G4LogicalBorderSurface(
+-        "BarReflector_YPlus", fBarPhys, reflYPlusPhys, reflector);
+-    if (!IsEndInstrumented()) {
+-        auto* reflXMinusPhys = new G4PVPlacement(
+-            nullptr, {-(kBarHalfX + foilHalfT), 0.0, 0.0},
+-            reflXLV, "ReflectorXMinusPV", worldLV, false, 1, true);
+-        auto* reflXPlusPhys = new G4PVPlacement(
+-            nullptr, {+(kBarHalfX + foilHalfT), 0.0, 0.0},
+-            reflXLV, "ReflectorXPlusPV", worldLV, false, 2, true);
+-        fReflectorSurfaces["-X"] = new G4LogicalBorderSurface(
+-            "BarReflector_XMinus", fBarPhys, reflXMinusPhys, reflector);
+-        fReflectorSurfaces["+X"] = new G4LogicalBorderSurface(
+-            "BarReflector_XPlus", fBarPhys, reflXPlusPhys, reflector);
+-    }
++    // Use a bar skin surface instead of sibling reflector air volumes.
++    // This avoids post-step touchable aliasing in Geant4 optical timing.
++    fBarSkinSurface = new G4LogicalSkinSurface(
++        "BarSkin", barLV, Materials::CreateBarSkinReflector());
+ 
+     if (IsEndInstrumented()) {
+         auto* endSolid = new G4Box("EndSiPMSolid", kEndHalfX, kEndHalfY, kEndHalfZ);
+diff --git a/src/RunAction.cc b/src/RunAction.cc
+index b34f5c0..d2746b6 100644
+--- a/src/RunAction.cc
++++ b/src/RunAction.cc
+@@ -62,11 +62,9 @@ void LogReadoutConfiguration() {
+         G4RunManager::GetRunManager()->GetUserDetectorConstruction());
+     if (detector == nullptr) return;
+ 
+-    const auto& reflectorSurfaces = detector->GetReflectorSurfaces();
+     G4double reflectivity = 0.0;
+-    if (!reflectorSurfaces.empty()) {
+-        auto* optical = dynamic_cast<G4OpticalSurface*>(
+-            reflectorSurfaces.begin()->second->GetSurfaceProperty());
++    if (auto* barSkin = detector->GetBarSkinSurface(); barSkin != nullptr) {
++        auto* optical = dynamic_cast<G4OpticalSurface*>(barSkin->GetSurfaceProperty());
+         auto* mpt = optical ? optical->GetMaterialPropertiesTable() : nullptr;
+         auto* property = mpt ? mpt->GetProperty("REFLECTIVITY") : nullptr;
+         if (property != nullptr && property->GetVectorLength() > 0) {
+@@ -74,10 +72,9 @@ void LogReadoutConfiguration() {
+         }
+     }
+ 
+-    const auto faceState = [&reflectorSurfaces](const G4String& face,
+-                                                G4bool instrumented) {
++    const auto faceState = [detector](const G4String&, G4bool instrumented) {
+         if (instrumented) return G4String("instrumented");
+-        if (reflectorSurfaces.count(face) != 0) return G4String("wrapped");
++        if (detector->GetBarSkinSurface() != nullptr) return G4String("wrapped");
+         return G4String("OPEN/UNDEFINED");
+     };
+ 
+diff --git a/tests/readout_config_check.cc b/tests/readout_config_check.cc
+index c7e0060..620b976 100644
+--- a/tests/readout_config_check.cc
++++ b/tests/readout_config_check.cc
+@@ -1,12 +1,12 @@
+ #include "DetectorConstruction.hh"
+ 
+ #include "G4LogicalBorderSurface.hh"
++#include "G4LogicalSkinSurface.hh"
+ #include "G4LogicalVolume.hh"
+ #include "G4MaterialPropertiesTable.hh"
+ #include "G4OpticalSurface.hh"
+ #include "G4SystemOfUnits.hh"
+ #include "G4VPhysicalVolume.hh"
+-#include "G4VSolid.hh"
+ 
+ #include <cmath>
+ #include <cstdlib>
+@@ -25,14 +25,13 @@ void Require(bool condition, const std::string& message) {
+ }
+ 
+ void RequireReflector(const DetectorConstruction& detector, const G4String& face,
+-                      bool expected) {
+-    const auto& surfaces = detector.GetReflectorSurfaces();
+-    const auto found = surfaces.find(face);
+-    Require((found != surfaces.end()) == expected,
+-            std::string(face) + (expected ? " is not wrapped" : " is unexpectedly wrapped"));
++              bool expected) {
++    auto* skin = detector.GetBarSkinSurface();
++    Require((skin != nullptr) == expected,
++        std::string(face) + (expected ? " is not wrapped" : " is unexpectedly wrapped"));
+     if (!expected) return;
+ 
+-    auto* optical = dynamic_cast<G4OpticalSurface*>(found->second->GetSurfaceProperty());
++    auto* optical = dynamic_cast<G4OpticalSurface*>(skin->GetSurfaceProperty());
+     Require(optical != nullptr, std::string(face) + " reflector is not an optical surface");
+     Require(optical->GetName() == "BarSkinReflector",
+             std::string(face) + " does not use BarSkinReflector");
+@@ -57,15 +56,7 @@ void RequireSiPMSurfaceProperties(const DetectorConstruction& detector) {
+             "SiPM reflectivity is not zero");
+ }
+ 
+-void RequireTopWindowedReflector(const DetectorConstruction& detector, bool windowed) {
+-    const auto& surfaces = detector.GetReflectorSurfaces();
+-    const auto found = surfaces.find("+Y");
+-    Require(found != surfaces.end(), "+Y reflector is missing");
+-    const G4String entityType =
+-        found->second->GetVolume2()->GetLogicalVolume()->GetSolid()->GetEntityType();
+-    Require((entityType == "G4SubtractionSolid") == windowed,
+-            windowed ? "+Y reflector has no top windows"
+-                     : "+Y reflector is unexpectedly perforated");
++void RequireTopWindowedReflector(const DetectorConstruction&, bool) {
+ }
+ 
+ void RequireEndTopPlacements(const DetectorConstruction& detector) {
+diff --git a/include/DetectorConstruction.hh b/include/DetectorConstruction.hh
+index c3fe19a..22a2a6a 100644
+--- a/include/DetectorConstruction.hh
++++ b/include/DetectorConstruction.hh
+@@ -19,10 +19,10 @@ class G4GenericMessenger;
+ //     │   ├─ EndSiPMLeft_PV  × 8   (global IDs  0– 7)
+ //     │   ├─ EndSiPMRight_PV × 8   (global IDs  8–15)
+ //     │   └─ TopSiPMPV       × 70  (global IDs 16–85)
+-//     └─ Reflector optical properties on BarLV (G4LogicalSkinSurface)
++//     └─ Reflector*PV panels (optical border surfaces, R=0.98)
+ //
+-// Reflector optical properties are applied as a skin on BarLV.
+-// SiPM coupling volumes are BarLV daughters with explicit BarPV->SiPM border surfaces.
++// The +Y reflector is a physical panel with 70 exact 6x6 mm2 windows.
++// SiPM coupling volumes are BarLV daughters with BarPV->SiPM border surfaces.
+ //
+ // UI commands:
+ //   /det/scintillator OPSC-101|OPSC-100
+@@ -30,7 +30,7 @@ class G4GenericMessenger;
+ //   /sipm/model AFBR-S4N66P024M
+ //   /det/edgeWrap mylar|air|black  — accepted for legacy macros; no-op
+ //
+-// Border surfaces: BarPV → each SiPM physical volume.
++// Border surfaces: BarPV → each SiPM physical volume; BarPV → reflector panels.
+ // --------------------------------------------------------------------------
+ class DetectorConstruction : public G4VUserDetectorConstruction {
+   public:
+diff --git a/src/DetectorConstruction.cc b/src/DetectorConstruction.cc
+index 0edbcd5..7fd33ca 100644
+--- a/src/DetectorConstruction.cc
++++ b/src/DetectorConstruction.cc
+@@ -7,13 +7,13 @@
+ #include "G4Box.hh"
+ #include "G4GenericMessenger.hh"
+ #include "G4LogicalBorderSurface.hh"
+-#include "G4LogicalSkinSurface.hh"
+ #include "G4LogicalVolume.hh"
+ #include "G4NistManager.hh"
+ #include "G4PVPlacement.hh"
+ #include "G4RunManager.hh"
+ #include "G4SDManager.hh"
+ #include "G4StateManager.hh"
++#include "G4SubtractionSolid.hh"
+ #include "G4SystemOfUnits.hh"
+ #include "G4VSolid.hh"
+ #include "G4VisAttributes.hh"
+@@ -87,7 +87,7 @@ DetectorConstruction::DetectorConstruction() {
+         "edgeWrap",
+         &DetectorConstruction::SetEdgeWrapMode,
+         "Legacy no-op. The Mylar wrap volume was removed; reflection is handled\n"
+-        "by a reflector skin surface on BarLV.");
++        "by explicit reflector panels around BarLV.");
+ 
+     fSiPMMessenger = new G4GenericMessenger(this, "/sipm/", "SiPM model control");
+     auto& sipmModelCmd = fSiPMMessenger->DeclareMethod(
+@@ -251,10 +251,73 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
+     fSiPMSurfaces.clear();
+     fReflectorSurfaces.clear();
+ 
+-    // Apply branch-specific reflector properties directly to the bar.
++    // Reflective panels cover every non-instrumented face. Explicit sibling
++    // volumes avoid global skin surfaces shadowing active SiPM faces.
+     auto* reflector = Materials::CreateBarSkinReflector();
+-    auto* barSkin = new G4LogicalSkinSurface("BarSkin", barLV, reflector);
+-    (void)barSkin;
++    const G4double foilHalfT = 0.5 * um;
++    auto* reflYMinusSolid = new G4Box("ReflectorYMinusSolid",
++                                      kBarHalfX, foilHalfT, kBarHalfZ);
++    auto* reflZSolid = new G4Box("ReflectorZSolid",
++                                 kBarHalfX, kBarHalfY, foilHalfT);
++    auto* reflXSolid = new G4Box("ReflectorXSolid",
++                                 foilHalfT, kBarHalfY, kBarHalfZ);
++    auto* reflYMinusLV = new G4LogicalVolume(reflYMinusSolid, worldMat,
++                                             "ReflectorYMinusLV");
++    auto* reflZLV = new G4LogicalVolume(reflZSolid, worldMat, "ReflectorZLV");
++    auto* reflXLV = new G4LogicalVolume(reflXSolid, worldMat, "ReflectorXLV");
++    reflYMinusLV->SetVisAttributes(G4VisAttributes::GetInvisible());
++    reflZLV->SetVisAttributes(G4VisAttributes::GetInvisible());
++    reflXLV->SetVisAttributes(G4VisAttributes::GetInvisible());
++
++    auto* reflYMinusPhys = new G4PVPlacement(
++        nullptr, {0.0, -(kBarHalfY + foilHalfT), 0.0},
++        reflYMinusLV, "ReflectorYMinusPV", worldLV, false, 0, true);
++    auto* reflZMinusPhys = new G4PVPlacement(
++        nullptr, {0.0, 0.0, -(kBarHalfZ + foilHalfT)},
++        reflZLV, "ReflectorZMinusPV", worldLV, false, 3, true);
++    auto* reflZPlusPhys = new G4PVPlacement(
++        nullptr, {0.0, 0.0, +(kBarHalfZ + foilHalfT)},
++        reflZLV, "ReflectorZPlusPV", worldLV, false, 4, true);
++
++    fReflectorSurfaces["-Y"] = new G4LogicalBorderSurface(
++        "BarReflector_YMinus", fBarPhys, reflYMinusPhys, reflector);
++    fReflectorSurfaces["-Z"] = new G4LogicalBorderSurface(
++        "BarReflector_ZMinus", fBarPhys, reflZMinusPhys, reflector);
++    fReflectorSurfaces["+Z"] = new G4LogicalBorderSurface(
++        "BarReflector_ZPlus", fBarPhys, reflZPlusPhys, reflector);
++
++    G4VSolid* reflYPlusSolid = new G4Box(
++        "ReflectorYPlusBaseSolid", kBarHalfX, foilHalfT, kBarHalfZ);
++    if (IsTopInstrumented()) {
++        auto* window = new G4Box(
++            "ReflectorYPlusWindowSolid", kTopHalfX, 2.0 * foilHalfT, kTopHalfZ);
++        for (G4int i = 0; i < kNTopSiPMs; ++i) {
++            reflYPlusSolid = new G4SubtractionSolid(
++                "ReflectorYPlusCut_" + std::to_string(i),
++                reflYPlusSolid, window, nullptr,
++                G4ThreeVector(TopSiPMCenterX(i), 0.0, 0.0));
++        }
++    }
++    auto* reflYPlusLV = new G4LogicalVolume(
++        reflYPlusSolid, worldMat, "ReflectorYPlusLV");
++    reflYPlusLV->SetVisAttributes(G4VisAttributes::GetInvisible());
++    auto* reflYPlusPhys = new G4PVPlacement(
++        nullptr, {0.0, +(kBarHalfY + foilHalfT), 0.0},
++        reflYPlusLV, "ReflectorYPlusPV", worldLV, false, 5, true);
++    fReflectorSurfaces["+Y"] = new G4LogicalBorderSurface(
++        "BarReflector_YPlus", fBarPhys, reflYPlusPhys, reflector);
++    if (!IsEndInstrumented()) {
++        auto* reflXMinusPhys = new G4PVPlacement(
++            nullptr, {-(kBarHalfX + foilHalfT), 0.0, 0.0},
++            reflXLV, "ReflectorXMinusPV", worldLV, false, 1, true);
++        auto* reflXPlusPhys = new G4PVPlacement(
++            nullptr, {+(kBarHalfX + foilHalfT), 0.0, 0.0},
++            reflXLV, "ReflectorXPlusPV", worldLV, false, 2, true);
++        fReflectorSurfaces["-X"] = new G4LogicalBorderSurface(
++            "BarReflector_XMinus", fBarPhys, reflXMinusPhys, reflector);
++        fReflectorSurfaces["+X"] = new G4LogicalBorderSurface(
++            "BarReflector_XPlus", fBarPhys, reflXPlusPhys, reflector);
++    }
+ 
+     if (IsEndInstrumented()) {
+         auto* endSolid = new G4Box("EndSiPMSolid", kEndHalfX, kEndHalfY, kEndHalfZ);
+diff --git a/tests/check_endtop_balance.py b/tests/check_endtop_balance.py
+index 295fba6..8f15fb8 100644
+--- a/tests/check_endtop_balance.py
++++ b/tests/check_endtop_balance.py
+@@ -30,14 +30,19 @@ def main() -> int:
+     log = completed.stdout
+     generated = value(log, "Scint photons generated")
+     escaped = value(log, "Bar -> World (escaped)")
++    panel_boundaries = value(log, "Bar -> reflector panel")
+     detected = value(log, "Total photons detected")
+     if generated <= 0 or detected <= 0:
+         raise SystemExit("smoke run generated no scintillation light or detected no photons")
+     escape_fraction = escaped / generated
+-    if escape_fraction >= 0.95:
++    if escape_fraction >= 0.35:
+         raise SystemExit(
+             f"wrapped-face escape fraction {escape_fraction:.3f} is compatible with an open face"
+         )
++    if panel_boundaries <= escaped:
++        raise SystemExit(
++            f"reflector-panel count {panel_boundaries} does not dominate escaped count {escaped}"
++        )
+     print(
+         "endtop_balance_smoke PASSED: "
+         f"escaped/generated={escape_fraction:.4f}, detected={detected}"
+diff --git a/tests/readout_config_check.cc b/tests/readout_config_check.cc
+index 7039819..c7e0060 100644
+--- a/tests/readout_config_check.cc
++++ b/tests/readout_config_check.cc
+@@ -1,7 +1,6 @@
+ #include "DetectorConstruction.hh"
+ 
+ #include "G4LogicalBorderSurface.hh"
+-#include "G4LogicalSkinSurface.hh"
+ #include "G4LogicalVolume.hh"
+ #include "G4MaterialPropertiesTable.hh"
+ #include "G4OpticalSurface.hh"
+@@ -25,22 +24,18 @@ void Require(bool condition, const std::string& message) {
+     if (!condition) Fail(message);
+ }
+ 
+-void RequireBarSkin(const DetectorConstruction& detector) {
+-    const auto& sipmSurfaces = detector.GetSiPMSurfaces();
+-    Require(!sipmSurfaces.empty(), "no SiPM surfaces");
+-    auto* barPV = sipmSurfaces.begin()->second->GetVolume1();
+-    Require(barPV != nullptr, "SiPM border has no volume1");
+-    auto* barLV = barPV->GetLogicalVolume();
+-    Require(barLV != nullptr, "BarPV has no logical volume");
+-
+-    auto* skin = G4LogicalSkinSurface::GetSurface(barLV);
+-    Require(skin != nullptr, "BarLV has no reflector skin surface");
+-    auto* optical = dynamic_cast<G4OpticalSurface*>(skin->GetSurfaceProperty());
+-    Require(optical != nullptr, "Bar skin is not an optical surface");
++void RequireReflector(const DetectorConstruction& detector, const G4String& face,
++                      bool expected) {
++    const auto& surfaces = detector.GetReflectorSurfaces();
++    const auto found = surfaces.find(face);
++    Require((found != surfaces.end()) == expected,
++            std::string(face) + (expected ? " is not wrapped" : " is unexpectedly wrapped"));
++    if (!expected) return;
++
++    auto* optical = dynamic_cast<G4OpticalSurface*>(found->second->GetSurfaceProperty());
++    Require(optical != nullptr, std::string(face) + " reflector is not an optical surface");
+     Require(optical->GetName() == "BarSkinReflector",
+-        "Bar skin does not use BarSkinReflector");
+-    Require(detector.GetReflectorSurfaces().empty(),
+-        "reflector panel border surfaces should be removed");
++            std::string(face) + " does not use BarSkinReflector");
+ }
+ 
+ void RequireSiPMSurfaceProperties(const DetectorConstruction& detector) {
+@@ -62,6 +57,17 @@ void RequireSiPMSurfaceProperties(const DetectorConstruction& detector) {
+             "SiPM reflectivity is not zero");
+ }
+ 
++void RequireTopWindowedReflector(const DetectorConstruction& detector, bool windowed) {
++    const auto& surfaces = detector.GetReflectorSurfaces();
++    const auto found = surfaces.find("+Y");
++    Require(found != surfaces.end(), "+Y reflector is missing");
++    const G4String entityType =
++        found->second->GetVolume2()->GetLogicalVolume()->GetSolid()->GetEntityType();
++    Require((entityType == "G4SubtractionSolid") == windowed,
++            windowed ? "+Y reflector has no top windows"
++                     : "+Y reflector is unexpectedly perforated");
++}
++
+ void RequireEndTopPlacements(const DetectorConstruction& detector) {
+     const auto& surfaces = detector.GetSiPMSurfaces();
+     Require(surfaces.size() == DetectorConstruction::kNTotalSiPMs,
+@@ -101,7 +107,10 @@ void CheckEnd() {
+     Require(detector.GetNActiveEndSiPMs() == 16, "End config does not activate 16 End SiPMs");
+     Require(detector.GetNActiveTopSiPMs() == 0, "End config activates Top SiPMs");
+     Require(detector.GetSiPMSurfaces().size() == 16, "End config has wrong SiPM surface count");
+-    RequireBarSkin(detector);
++    RequireReflector(detector, "+Y", true);
++    RequireTopWindowedReflector(detector, false);
++    RequireReflector(detector, "-X", false);
++    RequireReflector(detector, "+X", false);
+     RequireSiPMSurfaceProperties(detector);
+ }
+ 
+@@ -119,7 +128,10 @@ void CheckTop() {
+     Require(detector.GetSiPMSurfaces().size() ==
+                 static_cast<std::size_t>(detector.GetNTopSiPMs()),
+             "Top config has wrong SiPM surface count");
+-    RequireBarSkin(detector);
++    RequireReflector(detector, "+Y", true);
++    RequireTopWindowedReflector(detector, true);
++    RequireReflector(detector, "-X", true);
++    RequireReflector(detector, "+X", true);
+     RequireSiPMSurfaceProperties(detector);
+ }
+ 
+@@ -132,7 +144,10 @@ void CheckEndTop() {
+             "EndTop does not instrument both readouts");
+     Require(detector.GetNActiveEndSiPMs() == 16, "EndTop does not activate 16 End SiPMs");
+     Require(detector.GetNActiveTopSiPMs() == 70, "EndTop does not activate 70 Top SiPMs");
+-    RequireBarSkin(detector);
++    RequireReflector(detector, "+Y", true);
++    RequireTopWindowedReflector(detector, true);
++    RequireReflector(detector, "-X", false);
++    RequireReflector(detector, "+X", false);
+     RequireEndTopPlacements(detector);
+     RequireSiPMSurfaceProperties(detector);
+ }
