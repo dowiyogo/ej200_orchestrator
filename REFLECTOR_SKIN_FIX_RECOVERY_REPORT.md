@@ -392,8 +392,9 @@ Key diff files:
 | feat/endonly-mylar | 7347db6 | **6942ee6** | **REPAIRED** | OK | 11/11 PASS | NO |
 | fix/readout-wrapping-config | 2a9d57b | **c9e61af** | **REPAIRED** | OK | 4/4 PASS | NO |
 | diag/photon-budget | 2dbe63a | 2dbe63a (reverted) | **REVERTED** (fix pending) | N/A | N/A | NO |
-| fix/physics-baseline | ea0c6d2 | ea0c6d2 (reverted) | **REVERTED** (fix pending) | N/A | N/A | NO |
-| main | 4e46959 | 4e46959 (reverted) | **REVERTED** (deferred) | N/A | N/A | NO |
+| fix/physics-baseline | ea0c6d2 | **26f4767** | **REPAIRED** | OK | 3/3 PASS | NO |
+| diag/photon-budget | 2dbe63a | **0ca6855** | **REPAIRED** | OK | 3/3 PASS | NO |
+| main | 4e46959 | **84e902c** | **REPAIRED** | OK | 2/2 PASS | NO |
 | backup/photon-budget-worktree | 81e242d | 81e242d (reverted) | **SKIPPED** (archival) | N/A | N/A | NO |
 
 All branches are unpushed. No remote damage has occurred.
@@ -414,8 +415,44 @@ All branches are unpushed. No remote damage has occurred.
 
 ### New repair commits:
 - `feat/endonly-mylar` → `6942ee6`: correct SkinSurface fix preserving SetMylarReflectivity/SetTopSurface/SetMylarSigmaAlpha APIs; 11/11 ctest tests pass
+- `fix/physics-baseline` → `26f4767`: targeted fix (same API as diag/photon-budget); 3/3 tests pass
+- `diag/photon-budget` → `0ca6855`: targeted fix preserving TopSiPMCenterX(idx, pitch, nTotal) and ComputeNTopSiPMs(pitch); 3/3 tests pass
+- `main` → `84e902c`: targeted fix preserving dynamic-pitch API; 2/2 tests pass
 
-### Pending (require separate work sessions):
-- `diag/photon-budget`: apply minimal fix for this branch's TopSiPMCenterX(idx, pitch, nTotal) API
-- `fix/physics-baseline`: apply targeted fix (similar API to fix/readout-wrapping-config)
-- `main`: decide strategy for dynamic-pitch API before applying fix
+## 12. Pending Branch Completion (session 2, 2026-06-18)
+
+### fix/physics-baseline
+
+| Field | Value |
+|-------|-------|
+| Starting SHA | ea0c6d2 |
+| Final SHA | 26f4767 |
+| Files changed | include/DetectorConstruction.hh, src/DetectorConstruction.cc |
+| Build result | OK |
+| ctest result | 3/3 PASS (smoke_test, edge_scan_smoke, physics_baseline_check) |
+| Pushed | NO |
+| Remaining issues | Copilot-added tests/readout_config_check.cc and tests/check_endtop_balance.py are untracked; not in CMakeLists.txt; not compiled by ctest. Both have API mismatches (call TopSiPMCenterX with 1 arg; branch uses 3-arg signature). Safe to leave untracked or remove. |
+
+### diag/photon-budget
+
+| Field | Value |
+|-------|-------|
+| Starting SHA | 2dbe63a |
+| Final SHA | 0ca6855 |
+| Files changed | include/DetectorConstruction.hh, src/DetectorConstruction.cc |
+| Build result | OK |
+| ctest result | 3/3 PASS (smoke_test, edge_scan_smoke, physics_baseline_check) |
+| Pushed | NO |
+| Remaining issues | Same as fix/physics-baseline: untracked Copilot tests with API mismatches. Untracked files include/OrganicScintillatorFactory.hh, include/SiPMModel.hh, include/VMaterialFactory.hh, src/external/ are leftover from Copilot and should not be committed. The physics_baseline_check test previously failed (Copilot's bad commit) — confirmed passing now. |
+
+### main
+
+| Field | Value |
+|-------|-------|
+| Starting SHA | 4e46959 |
+| Final SHA | 84e902c |
+| Files changed | include/DetectorConstruction.hh, src/DetectorConstruction.cc |
+| Build result | OK |
+| ctest result | 2/2 PASS (smoke_test, edge_scan_smoke) |
+| Pushed | NO |
+| Remaining issues | Copilot-added tests/ directory is entirely untracked; not in CMakeLists.txt. Strategy note is at MAIN_REFLECTOR_FIX_STRATEGY.md. Dynamic-pitch API (ComputeNTopSiPMs, TopSiPMCenterX 3-arg) is fully preserved. |
