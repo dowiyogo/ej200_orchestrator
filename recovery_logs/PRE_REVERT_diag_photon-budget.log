@@ -1,0 +1,21 @@
+=== PRE-REVERT: diag/photon-budget ===
+180a9ec HEAD@{0}: commit (cherry-pick): fix(optics): replace reflector volumes with bar skin surface
+2dbe63a HEAD@{1}: reset: moving to HEAD
+2dbe63a HEAD@{2}: 
+On branch diag/photon-budget
+Your branch is ahead of 'origin/diag/photon-budget' by 1 commit.
+  (use "git push" to publish your local commits)
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	include/OrganicScintillatorFactory.hh
+	include/SiPMModel.hh
+	include/VMaterialFactory.hh
+	src/external/
+
+nothing added to commit but untracked files present (use "git add" to track)
+180a9ec fix(optics): replace reflector volumes with bar skin surface
+2dbe63a docs(diag): compare simulated PE with Constanza ToT MPV
+551c3b4 docs(diag): summarize photon-budget diagnosis
+c6487b8 diag(timing): compare End SUM reductions against photon yield
+6828c0e diag(optics): close photon-budget terminal accounting

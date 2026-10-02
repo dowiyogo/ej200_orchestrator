@@ -1,0 +1,36 @@
+=== PRE-REVERT STATE: feat/endonly-mylar ===
+7347db6 HEAD@{0}: commit: audit: add FINAL_PHYSICS_AUDIT.md, C++/OpenMP bootstrap skeleton, group-velocity validator
+8b65786 HEAD@{1}: commit: verify: extend checks — range sensitivity, budget closure, 1-R, σ_eq, no 'same attenuation', M2 bootstrap, v_app
+20653d8 HEAD@{2}: commit: regen: regenerate End-only Mylar deck from corrected pipeline; all verify_deck checks pass
+1ef8ddf HEAD@{3}: commit: deck: fix physics framework, NPE display, photon budget, velocity/timing interpretation
+6e128af HEAD@{4}: commit: analysis: constrained M2 fit, AIC/BIC, bootstrap, photon-budget and group-velocity corrections
+On branch feat/endonly-mylar
+Your branch is ahead of 'origin/feat/endonly-mylar' by 11 commits.
+  (use "git push" to publish your local commits)
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   include/DetectorConstruction.hh
+	modified:   src/DetectorConstruction.cc
+	modified:   tests/check_endtop_balance.py
+	modified:   tests/readout_config_check.cc
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   presentation/endonly_mylar/main.tex
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	analysis/bootstrap_attenuation
+	presentation/endonly_mylar/main.fdb_latexmk
+	presentation/endonly_mylar/main.fls
+	presentation/endonly_mylar/main.synctex.gz
+	presentation/endonly_mylar/main_corrected.synctex.gz
+	presentation/endonly_mylar/main_corrected.tex
+
+5f778ca fix(optics): replace reflector volumes with bar skin surface
+7347db6 audit: add FINAL_PHYSICS_AUDIT.md, C++/OpenMP bootstrap skeleton, group-velocity validator
+8b65786 verify: extend checks — range sensitivity, budget closure, 1-R, σ_eq, no 'same attenuation', M2 bootstrap, v_app
+20653d8 regen: regenerate End-only Mylar deck from corrected pipeline; all verify_deck checks pass
+1ef8ddf deck: fix physics framework, NPE display, photon budget, velocity/timing interpretation

@@ -1,0 +1,21 @@
+2a9d57b HEAD@{0}: commit: analysis+beamer: fit evidence, QA metrics, stage-1 vs TB-mirror ablation (CODEX_EXEC_09)
+5d01447 HEAD@{1}: commit: analysis: sigma_t(x) End readout, TB-mirror methodology + beamer (CODEX_EXEC_08)
+947b10f HEAD@{2}: commit: scan: resume_missing_2 — complete remaining positions (CODEX_EXEC_07)
+d346072 HEAD@{3}: commit: Add branch status report and audit notes for readout-wrapping-config
+2c8179e HEAD@{4}: commit (amend): docs(beamer): detailed geometry, surfaces, wrapping and SiPM layout
+On branch fix/readout-wrapping-config
+Your branch is ahead of 'origin/fix/readout-wrapping-config' by 2 commits.
+  (use "git push" to publish your local commits)
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   include/DetectorConstruction.hh
+	modified:   src/DetectorConstruction.cc
+	deleted:    tests/check_endtop_balance.py
+	modified:   tests/readout_config_check.cc
+
+838e91f fix(optics): replace reflector volumes with bar skin surface
+c9e61af fix(optics): replace reflector volumes with bar skin surface
+2a9d57b analysis+beamer: fit evidence, QA metrics, stage-1 vs TB-mirror ablation (CODEX_EXEC_09)
+5d01447 analysis: sigma_t(x) End readout, TB-mirror methodology + beamer (CODEX_EXEC_08)
+947b10f scan: resume_missing_2 — complete remaining positions (CODEX_EXEC_07)

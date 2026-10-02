@@ -1,0 +1,6 @@
+=== PRE-REVERT: backup/photon-budget-worktree (tmp) ===
+2db2f4f fix(optics): replace reflector volumes with bar skin surface
+81e242d Backup worktree: capture analysis and run changes (photon budget diagnostics)
+6c074eb test(geom): guardrail for readout-config wrapping
+0f781fa feat(config): log active readout config and per-face wrapping state
+0aa5d92 feat(geom): readout configuration selector (End/Top/EndTop)

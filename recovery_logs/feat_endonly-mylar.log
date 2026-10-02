@@ -1,0 +1,113 @@
+=== BRANCH: feat/endonly-mylar WORKTREE: /mnt/d/SHiP/ej200_endonly ===
+--- git status ---
+On branch feat/endonly-mylar
+Your branch is ahead of 'origin/feat/endonly-mylar' by 11 commits.
+  (use "git push" to publish your local commits)
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   include/DetectorConstruction.hh
+	modified:   src/DetectorConstruction.cc
+	modified:   tests/check_endtop_balance.py
+	modified:   tests/readout_config_check.cc
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   presentation/endonly_mylar/main.tex
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	analysis/bootstrap_attenuation
+	presentation/endonly_mylar/main.fdb_latexmk
+	presentation/endonly_mylar/main.fls
+	presentation/endonly_mylar/main.synctex.gz
+	presentation/endonly_mylar/main_corrected.synctex.gz
+	presentation/endonly_mylar/main_corrected.tex
+
+--- git status --short ---
+M  include/DetectorConstruction.hh
+ M presentation/endonly_mylar/main.tex
+M  src/DetectorConstruction.cc
+M  tests/check_endtop_balance.py
+M  tests/readout_config_check.cc
+?? analysis/bootstrap_attenuation
+?? presentation/endonly_mylar/main.fdb_latexmk
+?? presentation/endonly_mylar/main.fls
+?? presentation/endonly_mylar/main.synctex.gz
+?? presentation/endonly_mylar/main_corrected.synctex.gz
+?? presentation/endonly_mylar/main_corrected.tex
+--- HEAD ---
+5f778ca2cbe5660387b73af24df661afd8fe0f38
+feat/endonly-mylar
+--- log --oneline -n 15 ---
+5f778ca (HEAD -> feat/endonly-mylar) fix(optics): replace reflector volumes with bar skin surface
+7347db6 audit: add FINAL_PHYSICS_AUDIT.md, C++/OpenMP bootstrap skeleton, group-velocity validator
+8b65786 verify: extend checks — range sensitivity, budget closure, 1-R, σ_eq, no 'same attenuation', M2 bootstrap, v_app
+20653d8 regen: regenerate End-only Mylar deck from corrected pipeline; all verify_deck checks pass
+1ef8ddf deck: fix physics framework, NPE display, photon budget, velocity/timing interpretation
+6e128af analysis: constrained M2 fit, AIC/BIC, bootstrap, photon-budget and group-velocity corrections
+bf41a16 pre-audit: snapshot of End-only Mylar files before EXEC FINAL corrections
+9a97f16 verify: extend checks for three-model fits, datasheet properties, no ±0.0
+4ce2a07 deck: rebuild with 4 new frames, λ_bulk vs λ_eff framework, EndTop comparison
+c120c51 analysis: fix yield 10000→10400; weighted three-model attenuation fits; EndTop comparison
+489d238 feat(presentation): add end-only + Mylar EJ-204 Beamer deck pipeline
+3ae135f (origin/feat/endonly-mylar) test: strengthen base parity guard for SiPM coupling and scintillator
+7f7fa4f docs: document end-only Mylar workflow and verification
+be33a88 test: add end-only guardrails (no top channels, +Y closed, physical ordering, anti-artifact parity)
+898c9eb feat(analysis): make end readout pipeline robust to top-channel absence; emit attenuation + sigma_t CSVs
+--- conflict markers ---
+/mnt/d/SHiP/ej200_endonly/src/RunAction.cc:56:        << "\n====================================="
+/mnt/d/SHiP/ej200_endonly/src/RunAction.cc:103:        << "\n=============================================="
+/mnt/d/SHiP/ej200_endonly/src/RunAction.cc:191:        << "\n==============================\n"
+/mnt/d/SHiP/ej200_endonly/src/RunAction.cc:202:            << "\n====================================\n"
+--- fix commit present ---
+5f778ca fix(optics): replace reflector volumes with bar skin surface
+--- G4LogicalSkinSurface check ---
+NOT FOUND
+--- ReflectorYMinusPV check ---
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:346:        reflYMinusLV, "ReflectorYMinusPV", worldLV, false, 0, true);
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:349:        reflZLV, "ReflectorZMinusPV", worldLV, false, 3, true);
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:352:        reflZLV, "ReflectorZPlusPV", worldLV, false, 4, true);
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:378:        reflYPlusLV, "ReflectorYPlusPV", worldLV, false, 5, true);
+--- branch-specific APIs ---
+/mnt/d/SHiP/ej200_endonly/include/DetectorConstruction.hh:81:    void     SetTopSurface(G4String mode);
+/mnt/d/SHiP/ej200_endonly/include/DetectorConstruction.hh:82:    G4String GetTopSurface() const { return fTopSurface; }
+/mnt/d/SHiP/ej200_endonly/include/DetectorConstruction.hh:83:    void     SetMylarReflectivity(G4double value);
+/mnt/d/SHiP/ej200_endonly/include/DetectorConstruction.hh:84:    void     SetMylarSpecularLobe(G4double value);
+/mnt/d/SHiP/ej200_endonly/include/DetectorConstruction.hh:85:    void     SetMylarSigmaAlpha(G4double value);
+/mnt/d/SHiP/ej200_endonly/include/DetectorConstruction.hh:86:    G4double GetMylarReflectivity() const { return fMylarReflectivity; }
+/mnt/d/SHiP/ej200_endonly/include/DetectorConstruction.hh:105:    G4String           fTopSurface = "mylar";
+/mnt/d/SHiP/ej200_endonly/include/DetectorConstruction.hh:106:    G4double           fMylarReflectivity = 0.90;
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:101:        "topSurface", &DetectorConstruction::SetTopSurface,
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:108:        "reflectivity", &DetectorConstruction::SetMylarReflectivity,
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:114:        "specularLobe", &DetectorConstruction::SetMylarSpecularLobe,
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:120:        "sigmaAlpha", "deg", &DetectorConstruction::SetMylarSigmaAlpha,
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:199:    return fTopSurface == "sipm" &&
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:203:void DetectorConstruction::SetTopSurface(G4String mode) {
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:211:    if (mode == fTopSurface) return;
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:212:    fTopSurface = mode;
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:218:void DetectorConstruction::SetMylarReflectivity(G4double value) {
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:219:    if (value == fMylarReflectivity) return;
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:220:    fMylarReflectivity = value;
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:226:void DetectorConstruction::SetMylarSpecularLobe(G4double value) {
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:234:void DetectorConstruction::SetMylarSigmaAlpha(G4double value) {
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:325:    auto* reflector = fTopSurface == "mylar"
+/mnt/d/SHiP/ej200_endonly/src/DetectorConstruction.cc:327:              fMylarReflectivity, fMylarSpecularLobe, fMylarSigmaAlpha)
+/mnt/d/SHiP/ej200_endonly/tests/endonly_geometry_check.cc:16:    std::cerr << "endonly_geometry_check FAILED: " << message << '\n';
+/mnt/d/SHiP/ej200_endonly/tests/endonly_geometry_check.cc:57:    std::cout << "endonly_geometry_check PASSED: 16 END, 0 TOP, +Y/-Y/+Z/-Z closed\n";
+/mnt/d/SHiP/ej200_endonly/tests/readout_config_check.cc:130:    detector.SetTopSurface("sipm");
+/mnt/d/SHiP/ej200_endonly/tests/readout_config_check.cc:152:    detector.SetTopSurface("sipm");
+/mnt/d/SHiP/ej200_endonly/tests/export_endtop_gdml.cc:15:    detector.SetTopSurface("sipm");
+--- cherry-pick/merge/rebase state ---
+NONE
+--- diff --stat ---
+ presentation/endonly_mylar/main.tex | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+--- diff --cached --stat ---
+ include/DetectorConstruction.hh | 10 +-----
+ src/DetectorConstruction.cc     | 76 +++++++++++++++++++++++++++++++++++++++--
+ tests/check_endtop_balance.py   |  7 +++-
+ tests/readout_config_check.cc   | 55 ++++++++++++++++++-----------
+ 4 files changed, 116 insertions(+), 32 deletions(-)
+--- ls-files -u ---

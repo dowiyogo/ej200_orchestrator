@@ -1,0 +1,71 @@
+=== BRANCH: feat/endtop-sslg4 WORKTREE: /mnt/d/SHiP/ej200 ===
+--- git status ---
+On branch feat/endtop-sslg4
+Your branch is ahead of 'origin/feat/endtop-sslg4' by 6 commits.
+  (use "git push" to publish your local commits)
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   include/DetectorConstruction.hh
+	modified:   src/DetectorConstruction.cc
+	modified:   tests/check_endtop_balance.py
+	modified:   tests/readout_config_check.cc
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	GROUP_VELOCITY_AUDIT.md
+	runs/
+
+--- git status --short ---
+M  include/DetectorConstruction.hh
+M  src/DetectorConstruction.cc
+M  tests/check_endtop_balance.py
+M  tests/readout_config_check.cc
+?? GROUP_VELOCITY_AUDIT.md
+?? runs/
+--- HEAD ---
+f39b84cb1396c66bf70897aefb10d16675fba11d
+feat/endtop-sslg4
+--- branch -vv ---
+* feat/endtop-sslg4                      f39b84c [origin/feat/endtop-sslg4: ahead 6] fix(optics): replace reflector volumes with bar skin surface
+--- log --oneline -n 15 ---
+f39b84c (HEAD -> feat/endtop-sslg4) fix(optics): replace reflector volumes with bar skin surface
+c6e7843 EXEC_13 delivery fix: nombres de macro sin dígitos (fuga en portada); sigma_core robusto (MAD) + chi2 visible; caption F5; nota SPTR
+a7d22a3 (tag: pre-exec13-deliveryfix) EXEC_13: resolución núcleo-vs-cola del Top nearest + frame de conclusión (datos EJ-204)
+015b4e7 (tag: pre-exec13-resolution) EXEC_13: ediciones manuales de escalas/recorte LaTeX (R. Ríos), no del agente
+b956102 EXEC_13 closeout: closing/provenance frames, footer & author fix, double-pass compile
+c030e88 (tag: pre-exec13-closeout) EXEC_13: fixed-scale tN (10 ps bins), cluster <tn> dispersion, Top Npe/timing profiles for x = -690/-400/0 (EJ-204)
+5783a0d (tag: pre-exec13-checkpoint, tag: checkpoint/pre-pairscan-2026-06-11, origin/feat/endtop-sslg4) checkpoint: preserve validated EXEC_12b timing analysis
+29aee08 EXEC_12b/T5: tN_decomposition_slide — four dispersion mechanisms
+5abb3fc EXEC_12b/T4: tn_dispersion figures + 7 deck frames per key position
+995308f EXEC_12b/T3: fix five frame overflows (font/spacing only)
+a1a3c81 EXEC_12b/T2: add Group A/B and SPTR glossary entries
+69edcd9 EXEC_12b/T1: fourpe_rationale_slide + 4-PE methodology bullet
+f767be8 (tag: checkpoint/pre-exec12b-2026-06-11) EXEC_12.T6: update README with EXEC_12 regeneration commands and products
+25b7088 EXEC_12.T1-T6: add pedagogical Beamer deck exec12_report_full.pdf (110 pp)
+3141bc5 EXEC_12.T1: add remaining 24 exec11 arrival figures for full-scan slides
+--- conflict markers ---
+/mnt/d/SHiP/ej200/src/RunAction.cc:56:        << "\n====================================="
+/mnt/d/SHiP/ej200/src/RunAction.cc:100:        << "\n=============================================="
+/mnt/d/SHiP/ej200/src/RunAction.cc:188:        << "\n==============================\n"
+/mnt/d/SHiP/ej200/src/RunAction.cc:199:            << "\n====================================\n"
+--- fix commit present ---
+f39b84c fix(optics): replace reflector volumes with bar skin surface
+--- G4LogicalSkinSurface check ---
+NOT FOUND
+--- ReflectorYMinusPV check ---
+/mnt/d/SHiP/ej200/src/DetectorConstruction.cc:274:        reflYMinusLV, "ReflectorYMinusPV", worldLV, false, 0, true);
+/mnt/d/SHiP/ej200/src/DetectorConstruction.cc:277:        reflZLV, "ReflectorZMinusPV", worldLV, false, 3, true);
+/mnt/d/SHiP/ej200/src/DetectorConstruction.cc:280:        reflZLV, "ReflectorZPlusPV", worldLV, false, 4, true);
+/mnt/d/SHiP/ej200/src/DetectorConstruction.cc:306:        reflYPlusLV, "ReflectorYPlusPV", worldLV, false, 5, true);
+/mnt/d/SHiP/ej200/src/DetectorConstruction.cc:312:            reflXLV, "ReflectorXMinusPV", worldLV, false, 1, true);
+/mnt/d/SHiP/ej200/src/DetectorConstruction.cc:315:            reflXLV, "ReflectorXPlusPV", worldLV, false, 2, true);
+--- cherry-pick/merge/rebase state ---
+NONE
+--- diff --stat ---
+--- diff --cached --stat ---
+ include/DetectorConstruction.hh |  8 ++---
+ src/DetectorConstruction.cc     | 73 ++++++++++++++++++++++++++++++++++++++---
+ tests/check_endtop_balance.py   |  7 +++-
+ tests/readout_config_check.cc   | 53 +++++++++++++++++++-----------
+ 4 files changed, 112 insertions(+), 29 deletions(-)

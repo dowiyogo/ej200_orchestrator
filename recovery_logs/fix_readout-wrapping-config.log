@@ -1,0 +1,61 @@
+=== BRANCH: fix/readout-wrapping-config WORKTREE: /mnt/d/SHiP/ej200_edge_scan ===
+On branch fix/readout-wrapping-config
+Your branch is ahead of 'origin/fix/readout-wrapping-config' by 2 commits.
+  (use "git push" to publish your local commits)
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   include/DetectorConstruction.hh
+	modified:   src/DetectorConstruction.cc
+	deleted:    tests/check_endtop_balance.py
+	modified:   tests/readout_config_check.cc
+
+--- git status --short ---
+M  include/DetectorConstruction.hh
+M  src/DetectorConstruction.cc
+D  tests/check_endtop_balance.py
+M  tests/readout_config_check.cc
+--- HEAD ---
+838e91fe2dcc308ae92ed467754528d19b76b825
+fix/readout-wrapping-config
+--- log -n 15 ---
+838e91f (HEAD -> fix/readout-wrapping-config) fix(optics): replace reflector volumes with bar skin surface
+c9e61af fix(optics): replace reflector volumes with bar skin surface
+2a9d57b (tag: checkpoint/pre-endtop-sslg4-2026-06-10, origin/fix/readout-wrapping-config) analysis+beamer: fit evidence, QA metrics, stage-1 vs TB-mirror ablation (CODEX_EXEC_09)
+5d01447 analysis: sigma_t(x) End readout, TB-mirror methodology + beamer (CODEX_EXEC_08)
+947b10f scan: resume_missing_2 — complete remaining positions (CODEX_EXEC_07)
+d346072 Add branch status report and audit notes for readout-wrapping-config
+2c8179e docs(beamer): detailed geometry, surfaces, wrapping and SiPM layout
+6c074eb test(geom): guardrail for readout-config wrapping
+0f781fa feat(config): log active readout config and per-face wrapping state
+0aa5d92 feat(geom): readout configuration selector (End/Top/EndTop)
+ea0c6d2 (origin/fix/physics-baseline) docs(results): congruent SUM4 t_L-t_R timing metric + beamer update
+03a5603 docs(beamer): explicit time-resolution definition
+9546c84 docs(results): high-stats scan analysis + updated beamer
+22adf23 docs(results): scan analysis macro + beamer source
+2ba7a9c test(physics): add physics_baseline_check CTest guardrail
+--- conflict markers ---
+/mnt/d/SHiP/ej200_edge_scan/src/RunAction.cc:55:        << "\n====================================="
+/mnt/d/SHiP/ej200_edge_scan/src/RunAction.cc:97:        << "\n=============================================="
+/mnt/d/SHiP/ej200_edge_scan/src/RunAction.cc:185:        << "\n==============================\n"
+/mnt/d/SHiP/ej200_edge_scan/src/RunAction.cc:196:            << "\n====================================\n"
+--- fix commit ---
+838e91f fix(optics): replace reflector volumes with bar skin surface
+c9e61af fix(optics): replace reflector volumes with bar skin surface
+--- G4LogicalSkinSurface ---
+NOT FOUND
+--- ReflectorPV check ---
+/mnt/d/SHiP/ej200_edge_scan/src/DetectorConstruction.cc:252:        reflYMinusLV, "ReflectorYMinusPV", worldLV, false, 0, true);
+/mnt/d/SHiP/ej200_edge_scan/src/DetectorConstruction.cc:255:        reflZLV, "ReflectorZMinusPV", worldLV, false, 3, true);
+/mnt/d/SHiP/ej200_edge_scan/src/DetectorConstruction.cc:258:        reflZLV, "ReflectorZPlusPV", worldLV, false, 4, true);
+/mnt/d/SHiP/ej200_edge_scan/src/DetectorConstruction.cc:270:            reflYMinusLV, "ReflectorYPlusPV", worldLV, false, 5, true);
+--- cherry-pick/merge/rebase ---
+NONE
+--- diff --stat ---
+--- diff --cached --stat ---
+ include/DetectorConstruction.hh |  16 +---
+ src/DetectorConstruction.cc     | 171 ++++++++++++++++------------------------
+ tests/check_endtop_balance.py   |  49 ------------
+ tests/readout_config_check.cc   | 120 +++++-----------------------
+ 4 files changed, 91 insertions(+), 265 deletions(-)
+--- ls-files -u ---

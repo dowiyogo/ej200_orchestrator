@@ -1,0 +1,33 @@
+=== TMP WORKTREE: /tmp/ship-reflector-skin-fix/ej200/feat_endtop_sslg4 ===
+--- HEAD ---
+f39b84cb1396c66bf70897aefb10d16675fba11d
+feat/endtop-sslg4
+--- log -n 5 ---
+f39b84c (HEAD -> feat/endtop-sslg4) fix(optics): replace reflector volumes with bar skin surface
+c6e7843 EXEC_13 delivery fix: nombres de macro sin dígitos (fuga en portada); sigma_core robusto (MAD) + chi2 visible; caption F5; nota SPTR
+a7d22a3 (tag: pre-exec13-deliveryfix) EXEC_13: resolución núcleo-vs-cola del Top nearest + frame de conclusión (datos EJ-204)
+015b4e7 (tag: pre-exec13-resolution) EXEC_13: ediciones manuales de escalas/recorte LaTeX (R. Ríos), no del agente
+b956102 EXEC_13 closeout: closing/provenance frames, footer & author fix, double-pass compile
+--- conflicts ---
+--- G4LogicalSkinSurface in src (not bak) ---
+/tmp/ship-reflector-skin-fix/ej200/feat_endtop_sslg4/src/DetectorConstruction.cc:10:#include "G4LogicalSkinSurface.hh"
+/tmp/ship-reflector-skin-fix/ej200/feat_endtop_sslg4/src/DetectorConstruction.cc:256:    auto* barSkin = new G4LogicalSkinSurface("BarSkin", barLV, reflector);
+--- ReflectorPV in src (not bak) ---
+--- diff --stat ---
+--- diff --cached --stat ---
+--- show HEAD --stat ---
+commit f39b84cb1396c66bf70897aefb10d16675fba11d
+Author: dowiyogo <dowiyogo@gmail.com>
+Date:   Thu Jun 18 08:37:01 2026 +0200
+
+    fix(optics): replace reflector volumes with bar skin surface
+    
+    Remove thin air-filled reflector sibling volumes that caused
+    post-reflection optical-photon steps in the scintillator to be timed
+    with the air group velocity.
+    
+    Apply the existing branch-specific reflector optical properties as a
+    G4LogicalSkinSurface on the scintillator logical volume while
+    preserving explicit bar-to-SiPM border surfaces.
+    
+    This prevents reflector-volume touchable aliasing in G4Transportation

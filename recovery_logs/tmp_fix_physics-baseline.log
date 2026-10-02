@@ -1,0 +1,37 @@
+=== TMP WORKTREE: /tmp/ship-reflector-skin-fix/ej200/fix_physics-baseline ===
+--- HEAD ---
+d74816eac6a9f6eb20c288ad52c4da6c3e3ed882
+fix/physics-baseline
+--- log -n 5 ---
+d74816e (HEAD -> fix/physics-baseline) fix(optics): replace reflector volumes with bar skin surface
+ea0c6d2 (origin/fix/physics-baseline) docs(results): congruent SUM4 t_L-t_R timing metric + beamer update
+03a5603 docs(beamer): explicit time-resolution definition
+9546c84 docs(results): high-stats scan analysis + updated beamer
+22adf23 docs(results): scan analysis macro + beamer source
+--- conflicts ---
+/tmp/ship-reflector-skin-fix/ej200/fix_physics-baseline/include/DetectorConstruction.hh:21:<<<<<<< HEAD
+/tmp/ship-reflector-skin-fix/ej200/fix_physics-baseline/include/DetectorConstruction.hh:34:>>>>>>> f39b84c (fix(optics): replace reflector volumes with bar skin surface)
+--- G4LogicalSkinSurface in src (not bak) ---
+--- ReflectorPV in src (not bak) ---
+/tmp/ship-reflector-skin-fix/ej200/fix_physics-baseline/src/DetectorConstruction.cc:274:        reflYMinusLV, "ReflectorYMinusPV", worldLV, false, 0, true);
+/tmp/ship-reflector-skin-fix/ej200/fix_physics-baseline/src/DetectorConstruction.cc:277:        reflZLV, "ReflectorZMinusPV", worldLV, false, 3, true);
+/tmp/ship-reflector-skin-fix/ej200/fix_physics-baseline/src/DetectorConstruction.cc:280:        reflZLV, "ReflectorZPlusPV", worldLV, false, 4, true);
+/tmp/ship-reflector-skin-fix/ej200/fix_physics-baseline/src/DetectorConstruction.cc:306:        reflYPlusLV, "ReflectorYPlusPV", worldLV, false, 5, true);
+--- diff --stat ---
+--- diff --cached --stat ---
+--- show HEAD --stat ---
+commit d74816eac6a9f6eb20c288ad52c4da6c3e3ed882
+Author: dowiyogo <dowiyogo@gmail.com>
+Date:   Thu Jun 18 08:37:01 2026 +0200
+
+    fix(optics): replace reflector volumes with bar skin surface
+    
+    Remove thin air-filled reflector sibling volumes that caused
+    post-reflection optical-photon steps in the scintillator to be timed
+    with the air group velocity.
+    
+    Apply the existing branch-specific reflector optical properties as a
+    G4LogicalSkinSurface on the scintillator logical volume while
+    preserving explicit bar-to-SiPM border surfaces.
+    
+    This prevents reflector-volume touchable aliasing in G4Transportation

@@ -1,0 +1,34 @@
+=== TMP WORKTREE: /tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar ===
+--- HEAD ---
+5f778ca2cbe5660387b73af24df661afd8fe0f38
+feat/endonly-mylar
+--- log -n 5 ---
+5f778ca (HEAD -> feat/endonly-mylar) fix(optics): replace reflector volumes with bar skin surface
+7347db6 audit: add FINAL_PHYSICS_AUDIT.md, C++/OpenMP bootstrap skeleton, group-velocity validator
+8b65786 verify: extend checks — range sensitivity, budget closure, 1-R, σ_eq, no 'same attenuation', M2 bootstrap, v_app
+20653d8 regen: regenerate End-only Mylar deck from corrected pipeline; all verify_deck checks pass
+1ef8ddf deck: fix physics framework, NPE display, photon budget, velocity/timing interpretation
+--- conflicts ---
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/include/DetectorConstruction.hh.bak:22:<<<<<<< HEAD
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/include/DetectorConstruction.hh.bak:35:>>>>>>> f39b84c (fix(optics): replace reflector volumes with bar skin surface)
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/include/DetectorConstruction.hh:22:<<<<<<< HEAD
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/include/DetectorConstruction.hh:35:>>>>>>> f39b84c (fix(optics): replace reflector volumes with bar skin surface)
+--- G4LogicalSkinSurface ---
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/src/DetectorConstruction.cc.bak:10:#include "G4LogicalSkinSurface.hh"
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/src/DetectorConstruction.cc.bak:325:    auto* barSkin = new G4LogicalSkinSurface("BarSkin", barLV, reflector);
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/include/DetectorConstruction.hh.bak:31://     └─ Reflector optical properties on BarLV (G4LogicalSkinSurface)
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/tests/readout_config_check.cc:4:#include "G4LogicalSkinSurface.hh"
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/tests/readout_config_check.cc:36:    auto* skin = G4LogicalSkinSurface::GetSurface(barLV);
+--- ReflectorPV ---
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/src/DetectorConstruction.cc:274:        reflYMinusLV, "ReflectorYMinusPV", worldLV, false, 0, true);
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/src/DetectorConstruction.cc:277:        reflZLV, "ReflectorZMinusPV", worldLV, false, 3, true);
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/src/DetectorConstruction.cc:280:        reflZLV, "ReflectorZPlusPV", worldLV, false, 4, true);
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/src/DetectorConstruction.cc:306:        reflYPlusLV, "ReflectorYPlusPV", worldLV, false, 5, true);
+--- branch-specific APIs for endonly ---
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/include/DetectorConstruction.hh:89:    void     SetTopSurface(G4String mode);
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/include/DetectorConstruction.hh:91:    void     SetMylarReflectivity(G4double value);
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/include/DetectorConstruction.hh:94:    G4double GetMylarReflectivity() const { return fMylarReflectivity; }
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/include/DetectorConstruction.hh:114:    G4double           fMylarReflectivity = 0.90;
+/tmp/ship-reflector-skin-fix/ej200/feat_endonly-mylar/src/DetectorConstruction.cc.bak:101:        "topSurface", &DetectorConstruction::SetTopSurface,
+--- diff --stat ---
+--- diff --cached --stat ---

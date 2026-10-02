@@ -1,0 +1,9 @@
+=== PRE-REVERT: fix/physics-baseline ===
+d74816e HEAD@{0}: commit (cherry-pick): fix(optics): replace reflector volumes with bar skin surface
+ea0c6d2 HEAD@{1}: reset: moving to HEAD
+ea0c6d2 HEAD@{2}: 
+d74816e fix(optics): replace reflector volumes with bar skin surface
+ea0c6d2 docs(results): congruent SUM4 t_L-t_R timing metric + beamer update
+03a5603 docs(beamer): explicit time-resolution definition
+9546c84 docs(results): high-stats scan analysis + updated beamer
+22adf23 docs(results): scan analysis macro + beamer source

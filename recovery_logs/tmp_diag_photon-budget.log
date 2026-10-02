@@ -1,0 +1,27 @@
+=== TMP WORKTREE: /tmp/ship-reflector-skin-fix/ej200/diag_photon-budget ===
+?? include/OrganicScintillatorFactory.hh
+?? include/SiPMModel.hh
+?? include/VMaterialFactory.hh
+?? src/external/
+--- HEAD ---
+180a9ecbc5ee701fa6c5f951031e8d55cf513f0c
+diag/photon-budget
+--- log -n 5 ---
+180a9ec (HEAD -> diag/photon-budget) fix(optics): replace reflector volumes with bar skin surface
+2dbe63a (origin/diag/photon-budget) docs(diag): compare simulated PE with Constanza ToT MPV
+551c3b4 docs(diag): summarize photon-budget diagnosis
+c6487b8 diag(timing): compare End SUM reductions against photon yield
+6828c0e diag(optics): close photon-budget terminal accounting
+--- conflicts ---
+NONE
+--- G4LogicalSkinSurface ---
+/tmp/ship-reflector-skin-fix/ej200/diag_photon-budget/include/DetectorConstruction.hh:22://     └─ Reflector optical properties on BarLV (G4LogicalSkinSurface)
+/tmp/ship-reflector-skin-fix/ej200/diag_photon-budget/tests/readout_config_check.cc:4:#include "G4LogicalSkinSurface.hh"
+/tmp/ship-reflector-skin-fix/ej200/diag_photon-budget/tests/readout_config_check.cc:36:    auto* skin = G4LogicalSkinSurface::GetSurface(barLV);
+--- ReflectorPV ---
+/tmp/ship-reflector-skin-fix/ej200/diag_photon-budget/src/DetectorConstruction.cc:244:        reflYMinusLV, "ReflectorYMinusPV", worldLV, false, 0, true);
+/tmp/ship-reflector-skin-fix/ej200/diag_photon-budget/src/DetectorConstruction.cc:247:        reflZLV, "ReflectorZMinusPV", worldLV, false, 3, true);
+/tmp/ship-reflector-skin-fix/ej200/diag_photon-budget/src/DetectorConstruction.cc:250:        reflZLV, "ReflectorZPlusPV", worldLV, false, 4, true);
+/tmp/ship-reflector-skin-fix/ej200/diag_photon-budget/src/DetectorConstruction.cc:276:        reflYPlusLV, "ReflectorYPlusPV", worldLV, false, 5, true);
+--- diff --stat ---
+--- diff --cached --stat ---

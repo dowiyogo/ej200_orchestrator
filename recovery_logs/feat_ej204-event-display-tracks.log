@@ -1,0 +1,69 @@
+=== BRANCH: feat/ej204-event-display-tracks WORKTREE: /mnt/d/SHiP/ej200_event_display ===
+On branch feat/ej204-event-display-tracks
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   include/DetectorConstruction.hh
+	modified:   src/DetectorConstruction.cc
+	modified:   tests/check_endtop_balance.py
+	modified:   tests/readout_config_check.cc
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   include/DetectorConstruction.hh
+	modified:   src/DetectorConstruction.cc
+	modified:   src/RunAction.cc
+	modified:   tests/readout_config_check.cc
+
+MM include/DetectorConstruction.hh
+MM src/DetectorConstruction.cc
+ M src/RunAction.cc
+M  tests/check_endtop_balance.py
+MM tests/readout_config_check.cc
+b2718c42c339bbc01e77d020d1d8fe7d27956024
+feat/ej204-event-display-tracks
+b2718c4 (HEAD -> feat/ej204-event-display-tracks) fix(optics): replace reflector volumes with bar skin surface
+c93502b Add selective optical trajectory storage for EJ-204 event display
+c6e7843 EXEC_13 delivery fix: nombres de macro sin dígitos (fuga en portada); sigma_core robusto (MAD) + chi2 visible; caption F5; nota SPTR
+a7d22a3 (tag: pre-exec13-deliveryfix) EXEC_13: resolución núcleo-vs-cola del Top nearest + frame de conclusión (datos EJ-204)
+015b4e7 (tag: pre-exec13-resolution) EXEC_13: ediciones manuales de escalas/recorte LaTeX (R. Ríos), no del agente
+b956102 EXEC_13 closeout: closing/provenance frames, footer & author fix, double-pass compile
+c030e88 (tag: pre-exec13-closeout) EXEC_13: fixed-scale tN (10 ps bins), cluster <tn> dispersion, Top Npe/timing profiles for x = -690/-400/0 (EJ-204)
+5783a0d (tag: pre-exec13-checkpoint, tag: checkpoint/pre-pairscan-2026-06-11, origin/feat/endtop-sslg4) checkpoint: preserve validated EXEC_12b timing analysis
+29aee08 EXEC_12b/T5: tN_decomposition_slide — four dispersion mechanisms
+5abb3fc EXEC_12b/T4: tn_dispersion figures + 7 deck frames per key position
+995308f EXEC_12b/T3: fix five frame overflows (font/spacing only)
+a1a3c81 EXEC_12b/T2: add Group A/B and SPTR glossary entries
+69edcd9 EXEC_12b/T1: fourpe_rationale_slide + 4-PE methodology bullet
+f767be8 (tag: checkpoint/pre-exec12b-2026-06-11) EXEC_12.T6: update README with EXEC_12 regeneration commands and products
+25b7088 EXEC_12.T1-T6: add pedagogical Beamer deck exec12_report_full.pdf (110 pp)
+--- conflict markers ---
+/mnt/d/SHiP/ej200_event_display/src/RunAction.cc:56:        << "\n====================================="
+/mnt/d/SHiP/ej200_event_display/src/RunAction.cc:97:        << "\n=============================================="
+/mnt/d/SHiP/ej200_event_display/src/RunAction.cc:185:        << "\n==============================\n"
+/mnt/d/SHiP/ej200_event_display/src/RunAction.cc:196:            << "\n====================================\n"
+--- fix commit ---
+b2718c4 fix(optics): replace reflector volumes with bar skin surface
+--- G4LogicalSkinSurface ---
+/mnt/d/SHiP/ej200_event_display/include/DetectorConstruction.hh:3:#include "G4LogicalSkinSurface.hh"
+/mnt/d/SHiP/ej200_event_display/include/DetectorConstruction.hh:51:    G4LogicalSkinSurface* GetBarSkinSurface() const { return fBarSkinSurface; }
+/mnt/d/SHiP/ej200_event_display/include/DetectorConstruction.hh:96:    G4LogicalSkinSurface* fBarSkinSurface = nullptr;
+/mnt/d/SHiP/ej200_event_display/src/DetectorConstruction.cc:10:#include "G4LogicalSkinSurface.hh"
+/mnt/d/SHiP/ej200_event_display/src/DetectorConstruction.cc:253:    fBarSkinSurface = new G4LogicalSkinSurface(
+/mnt/d/SHiP/ej200_event_display/tests/readout_config_check.cc:4:#include "G4LogicalSkinSurface.hh"
+--- ReflectorPV ---
+NOT FOUND
+--- cherry-pick/merge state ---
+NONE
+--- diff --stat ---
+ include/DetectorConstruction.hh | 10 +++---
+ src/DetectorConstruction.cc     | 76 +++--------------------------------------
+ src/RunAction.cc                | 11 +++---
+ tests/readout_config_check.cc   | 23 ++++---------
+ 4 files changed, 21 insertions(+), 99 deletions(-)
+--- diff --cached --stat ---
+ include/DetectorConstruction.hh |  8 ++---
+ src/DetectorConstruction.cc     | 73 ++++++++++++++++++++++++++++++++++++++---
+ tests/check_endtop_balance.py   |  7 +++-
+ tests/readout_config_check.cc   | 53 +++++++++++++++++++-----------
+ 4 files changed, 112 insertions(+), 29 deletions(-)

@@ -1,0 +1,21 @@
+=== TMP WORKTREE: /tmp/ship-reflector-skin-fix/ej200/feat_endtop-sslg4 ===
+--- HEAD ---
+f39b84cb1396c66bf70897aefb10d16675fba11d
+feat/endtop-sslg4
+--- log -n 5 ---
+f39b84c (HEAD -> feat/endtop-sslg4) fix(optics): replace reflector volumes with bar skin surface
+c6e7843 EXEC_13 delivery fix: nombres de macro sin dígitos (fuga en portada); sigma_core robusto (MAD) + chi2 visible; caption F5; nota SPTR
+a7d22a3 (tag: pre-exec13-deliveryfix) EXEC_13: resolución núcleo-vs-cola del Top nearest + frame de conclusión (datos EJ-204)
+015b4e7 (tag: pre-exec13-resolution) EXEC_13: ediciones manuales de escalas/recorte LaTeX (R. Ríos), no del agente
+b956102 EXEC_13 closeout: closing/provenance frames, footer & author fix, double-pass compile
+--- conflicts ---
+NONE
+--- G4LogicalSkinSurface ---
+/tmp/ship-reflector-skin-fix/ej200/feat_endtop-sslg4/include/DetectorConstruction.hh:22://     └─ Reflector optical properties on BarLV (G4LogicalSkinSurface)
+/tmp/ship-reflector-skin-fix/ej200/feat_endtop-sslg4/tests/readout_config_check.cc:4:#include "G4LogicalSkinSurface.hh"
+/tmp/ship-reflector-skin-fix/ej200/feat_endtop-sslg4/tests/readout_config_check.cc:36:    auto* skin = G4LogicalSkinSurface::GetSurface(barLV);
+/tmp/ship-reflector-skin-fix/ej200/feat_endtop-sslg4/src/DetectorConstruction.cc:10:#include "G4LogicalSkinSurface.hh"
+/tmp/ship-reflector-skin-fix/ej200/feat_endtop-sslg4/src/DetectorConstruction.cc:256:    auto* barSkin = new G4LogicalSkinSurface("BarSkin", barLV, reflector);
+--- ReflectorPV ---
+--- diff --stat ---
+--- diff --cached --stat ---

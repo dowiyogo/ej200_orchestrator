@@ -1,0 +1,21 @@
+=== TMP WORKTREE: /tmp/ship-reflector-skin-fix/ej200/feat_ej230-sslg4 ===
+--- HEAD ---
+264d263dcd942f1698ef86826f1fc9c01d66ed7c
+feat/ej230-sslg4
+--- log -n 5 ---
+264d263 (HEAD -> feat/ej230-sslg4) fix(optics): replace reflector volumes with bar skin surface
+79e701d (origin/feat/ej230-sslg4) EXEC_14E/T5: compile and validate final report
+5ddc3e0 EXEC_14E/T4: append legible adaptive t_N backup frames
+144ed92 EXEC_14E/T3: validate appended adaptive backup frames
+153be3c EXEC_14E/T2: move adaptive t_N material to appended backup
+--- conflicts ---
+NONE
+--- G4LogicalSkinSurface ---
+/tmp/ship-reflector-skin-fix/ej200/feat_ej230-sslg4/tests/readout_config_check.cc:4:#include "G4LogicalSkinSurface.hh"
+/tmp/ship-reflector-skin-fix/ej200/feat_ej230-sslg4/tests/readout_config_check.cc:36:    auto* skin = G4LogicalSkinSurface::GetSurface(barLV);
+/tmp/ship-reflector-skin-fix/ej200/feat_ej230-sslg4/include/DetectorConstruction.hh:22://     └─ Reflector optical properties on BarLV (G4LogicalSkinSurface)
+/tmp/ship-reflector-skin-fix/ej200/feat_ej230-sslg4/src/DetectorConstruction.cc:10:#include "G4LogicalSkinSurface.hh"
+/tmp/ship-reflector-skin-fix/ej200/feat_ej230-sslg4/src/DetectorConstruction.cc:290:    auto* barSkin = new G4LogicalSkinSurface("BarSkin", barLV, reflector);
+--- ReflectorPV ---
+--- diff --stat ---
+--- diff --cached --stat ---

@@ -1,0 +1,9 @@
+=== PRE-REVERT: main ===
+b681101 HEAD@{0}: commit (cherry-pick): fix(optics): replace reflector volumes with bar skin surface
+4e46959 HEAD@{1}: reset: moving to HEAD
+4e46959 HEAD@{2}: 
+b681101 fix(optics): replace reflector volumes with bar skin surface
+4e46959 fix(optics): add reflector panels and photon-yield diagnostics
+f834f65 chore(optics): tune reflector panels to validated high reflectivity
+f07ea21 fix(geom): place BarPV directly in WorldLV with explicit reflector panels
+79bed03 fix(optics): replace border surface with LogicalSkinSurface on WrapLV

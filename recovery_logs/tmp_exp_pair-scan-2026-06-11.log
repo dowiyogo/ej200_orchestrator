@@ -1,0 +1,33 @@
+=== TMP WORKTREE: /tmp/ship-reflector-skin-fix/ej200/exp_pair-scan-2026-06-11 ===
+--- HEAD ---
+c7a627e7d0d77b2b11dc88adec8548eb3e67fa9b
+exp/pair-scan-2026-06-11
+--- log -n 5 ---
+c7a627e (HEAD -> exp/pair-scan-2026-06-11) fix(optics): replace reflector volumes with bar skin surface
+021d5f4 EXEC_12TB: add rebuilt self-contained beamer and speaker notes
+1ac830a EXEC_12TB: add beamer manifest and Makefile exec12tb targets
+d764892 EXEC_12TB: add generated tables and TeX number macros
+9cfe042 EXEC_12TB: add figure style module and regenerated deck figures
+--- conflicts ---
+--- G4LogicalSkinSurface in src (not bak) ---
+/tmp/ship-reflector-skin-fix/ej200/exp_pair-scan-2026-06-11/src/DetectorConstruction.cc:10:#include "G4LogicalSkinSurface.hh"
+/tmp/ship-reflector-skin-fix/ej200/exp_pair-scan-2026-06-11/src/DetectorConstruction.cc:256:    auto* barSkin = new G4LogicalSkinSurface("BarSkin", barLV, reflector);
+--- ReflectorPV in src (not bak) ---
+--- diff --stat ---
+--- diff --cached --stat ---
+--- show HEAD --stat ---
+commit c7a627e7d0d77b2b11dc88adec8548eb3e67fa9b
+Author: dowiyogo <dowiyogo@gmail.com>
+Date:   Thu Jun 18 08:37:01 2026 +0200
+
+    fix(optics): replace reflector volumes with bar skin surface
+    
+    Remove thin air-filled reflector sibling volumes that caused
+    post-reflection optical-photon steps in the scintillator to be timed
+    with the air group velocity.
+    
+    Apply the existing branch-specific reflector optical properties as a
+    G4LogicalSkinSurface on the scintillator logical volume while
+    preserving explicit bar-to-SiPM border surfaces.
+    
+    This prevents reflector-volume touchable aliasing in G4Transportation

@@ -1,0 +1,45 @@
+=== TMP WORKTREE: /tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree ===
+--- HEAD ---
+2db2f4f104a6e0ef2b02036feea2af41f0d01760
+backup/photon-budget-worktree
+--- log -n 5 ---
+2db2f4f (HEAD -> backup/photon-budget-worktree) fix(optics): replace reflector volumes with bar skin surface
+81e242d (origin/backup/photon-budget-worktree) Backup worktree: capture analysis and run changes (photon budget diagnostics)
+6c074eb test(geom): guardrail for readout-config wrapping
+0f781fa feat(config): log active readout config and per-face wrapping state
+0aa5d92 feat(geom): readout configuration selector (End/Top/EndTop)
+--- conflicts ---
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/include/DetectorConstruction.hh:21:<<<<<<< HEAD
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/include/DetectorConstruction.hh:34:>>>>>>> f39b84c (fix(optics): replace reflector volumes with bar skin surface)
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/tests/readout_config_check.cc:4:<<<<<<< HEAD
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/tests/readout_config_check.cc:9:>>>>>>> f39b84c (fix(optics): replace reflector volumes with bar skin surface)
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/tests/readout_config_check.cc:44:<<<<<<< HEAD
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/tests/readout_config_check.cc:94:>>>>>>> f39b84c (fix(optics): replace reflector volumes with bar skin surface)
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/tests/readout_config_check.cc:105:<<<<<<< HEAD
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/tests/readout_config_check.cc:112:>>>>>>> f39b84c (fix(optics): replace reflector volumes with bar skin surface)
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/tests/readout_config_check.cc:128:<<<<<<< HEAD
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/tests/readout_config_check.cc:135:>>>>>>> f39b84c (fix(optics): replace reflector volumes with bar skin surface)
+--- G4LogicalSkinSurface in src (not bak) ---
+--- ReflectorPV in src (not bak) ---
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/src/DetectorConstruction.cc:274:        reflYMinusLV, "ReflectorYMinusPV", worldLV, false, 0, true);
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/src/DetectorConstruction.cc:277:        reflZLV, "ReflectorZMinusPV", worldLV, false, 3, true);
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/src/DetectorConstruction.cc:280:        reflZLV, "ReflectorZPlusPV", worldLV, false, 4, true);
+/tmp/ship-reflector-skin-fix/ej200/backup_photon-budget-worktree/src/DetectorConstruction.cc:306:        reflYPlusLV, "ReflectorYPlusPV", worldLV, false, 5, true);
+--- diff --stat ---
+--- diff --cached --stat ---
+--- show HEAD --stat ---
+commit 2db2f4f104a6e0ef2b02036feea2af41f0d01760
+Author: dowiyogo <dowiyogo@gmail.com>
+Date:   Thu Jun 18 08:37:01 2026 +0200
+
+    fix(optics): replace reflector volumes with bar skin surface
+    
+    Remove thin air-filled reflector sibling volumes that caused
+    post-reflection optical-photon steps in the scintillator to be timed
+    with the air group velocity.
+    
+    Apply the existing branch-specific reflector optical properties as a
+    G4LogicalSkinSurface on the scintillator logical volume while
+    preserving explicit bar-to-SiPM border surfaces.
+    
+    This prevents reflector-volume touchable aliasing in G4Transportation
