@@ -2,3 +2,7 @@
 __pycache__/
 *.pyc
 *.log
+
+# bytecode de Python (higiene 2026-10-03)
+__pycache__/
+*.pyc
